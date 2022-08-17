@@ -1,0 +1,112 @@
+[
+	{
+		"grupo": "Participação em curso (oficina, minicurso,extensão, capacitação, treinamento) e similar, de natureza acadêmica, profissional.",
+		"paridade": 1,
+		"limite": 125
+	},
+	{
+		"grupo": "Ministrante de curso de extensão, de palestra; debatedor em mesa-redonda e similar.",
+		"paridade": 1,
+		"limite": 70
+	},
+	{
+		"grupo": "Atividade de monitoria de, no mínimo, 38 horas-semestre.",
+		"paridade": 1,
+		"limite": 152
+	},
+	{
+		"grupo": "Atividade acadêmica ou disciplina não aproveitada como créditos no Curso (inclusive disciplinas cursadas em outras universidades).",
+		"paridade": "?",
+		"limite": 180
+	},
+	{
+		"grupo": "Atividade de iniciação científica, ou equivalente de, no mínimo, 150 horas.",
+		"paridade": 1,
+		"limite": 125
+	},
+	{
+		"grupo": "Publicação de artigo científico completo (artigo efetivamente publicado ou com aceite final de publicação) em periódico.",
+		"paridade": 50,
+		"limite": 150
+	},
+	{
+		"grupo": "Publicação de artigo científico ou resumo em anais de evento científico como autor ou coautor.",
+		"paridade": 30,
+		"limite": 90
+	},
+	{
+		"grupo": "Publicação de produção autoral (foto, artigo, reportagem ou similar), em periódico ou site.",
+		"paridade": 20,
+		"limite": 60
+	},
+	{
+		"grupo": "Estágio não obrigatório de, no mínimo, 60 horas.",
+		"paridade": 1,
+		"limite": 125
+	},
+	{
+		"grupo": "Autor ou coautor de capítulo de livro.",
+		"paridade": 50,
+		"limite": 100
+	},
+	{
+		"grupo": "Inscrição em concurso acadêmico.",
+		"paridade": 10,
+		"limite": 80
+	},
+	{
+		"grupo": "Premiação em concurso acadêmico.",
+		"paridade": 30,
+		"limite": 80
+	},
+	{
+		"grupo": "Participação em evento (congresso, seminário, simpósio, workshop, palestra, conferência, feira) e similar, de natureza acadêmica.",
+		"paridade": 1,
+		"limite": 50
+	},
+	{
+		"grupo": "Serviço voluntário de caráter sociocomunitário, devidamente comprovado, realizado conforme a lei 9.608 de 18/02/1998.",
+		"paridade": 1,
+		"limite": 70
+	},
+	{
+		"grupo": "Apresentação de trabalho científico (inclusive pôster) em evento de âmbito regional, nacional ou internacional, como autor.",
+		"paridade": 10,
+		"limite": 50
+	},
+	{
+		"grupo": "Viagem de estudo e visita técnica.",
+		"paridade": 6,
+		"limite": 60
+	},
+	{
+		"grupo": "Realização de curso de idioma.",
+		"paridade": 1,
+		"limite": 125
+	},
+	{
+		"grupo": "Participação como ouvinte, em banca de trabalho de conclusão de curso de graduação, dissertação de mestrado e tese de Doutorado.",
+		"paridade": 1,
+		"limite": 10
+	},
+	{
+		"grupo": "Participação em comissão organizadora de eventos e similar.",
+		"paridade": 10,
+		"limite": 30
+	},
+	{
+		"grupo": "Exercício de cargo eletivo na diretoria do DCE ou do CA do Curso.",
+		"paridade": 20,
+		"limite": 20
+	},
+	{
+		"grupo": "Participação em equipe esportiva do IFF",
+		"paridade": 20,
+		"limite": 40
+	},
+	{
+		"grupo": "Certificação profissional na área do curso.",
+		"paridade": 30,
+		"limite": 90
+	}
+]
