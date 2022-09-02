@@ -30,10 +30,17 @@ export default function Login() {
 	const [ password, setPassword ] = useState('')
 	const [ persistAuth, setPesistAuth ] = useState(true)
 	const [ disableSingIn, setDisableSingIn ] = useState(true)
+	const [ singInPlaceholder, setSingInPlaceholder ] = useState('')
 
 	useEffect(() => {
 		setDisableSingIn(email.trim() === '' || password.trim() === '')
 	}, [email, password])
+
+	const getPlaceholder = ({ target: { value: email } }) => {
+		const beforeToken = email.split('@')[0]
+		if(email.trim() && beforeToken)
+			setSingInPlaceholder(beforeToken)
+	}
 
 	const singIn = useCallback(async () => {
 		const auth = getAuth()
@@ -42,8 +49,9 @@ export default function Login() {
 
 		try {
 			await signInWithEmailAndPassword(auth, email, password)
-		} catch ({ code }) {
-			// Fazer validação
+		} catch (err) {
+			if (process.env.NODE_ENV === 'development')
+				console.log(err.toString())
 		}
 	}, [email, password, persistAuth])
 
@@ -57,6 +65,7 @@ export default function Login() {
 					sx={{bgcolor: '#fff', width: '100%' }}
 					label="Email"
 					onChange={putEventTargetValue(setEmail)}
+					onBlur={getPlaceholder}
 				/>
 				<PasswordField
 					onChange={putEventTargetValue(setPassword)}
@@ -70,12 +79,16 @@ export default function Login() {
 				<Box sx={{ typography: 'body1'}} className="flex-col-center">
 					<span>
 						Não tem uma conta?
-						<Link component={RouterLink} to='/singin' ml='5px'>Registre-se</Link>
+						<Link
+							component={RouterLink}
+							to='/singin'
+							state={{ placeholder: singInPlaceholder }}
+							ml='5px'>Registre-se</Link>
 					</span>
 					<span>
 						Esqueceu a senha? {/* ver depois */}
 					</span>
-					<Divider sx={{ alignSelf: 'stretch', mt: '10px' }} />
+					<Divider sx={{ mt: '10px' }} flexItem />
 					<FormControlLabel
 						sx={{ m: '0', userSelect: 'none' }}
 						label='Permanecer Logado.'

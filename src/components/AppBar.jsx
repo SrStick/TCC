@@ -9,37 +9,39 @@ import Menu from '@mui/material/Menu';
 import MenuIcon from '@mui/icons-material/Menu';
 import Container from '@mui/material/Container';
 import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
+import Divider from '@mui/material/Divider';
 
 import PropTypes from 'prop-types';
 
 import logo from '../iff.png'
 
+import { Link as RouterLink } from 'react-router-dom'
+
 const pages = ['Products', 'Pricing', 'Blog'];
 
-const ResponsiveAppBar = ({ settings }) => {
+const ResponsiveAppBar = ({ settings, title, avatarUrl }) => {
 	const [anchorElNav, setAnchorElNav] = useState(null);
 	const [anchorElUser, setAnchorElUser] = useState(null);
 
 	const handleOpenNavMenu = (event) => {
 		setAnchorElNav(event.currentTarget);
-	};
+	}
 	const handleOpenUserMenu = (event) => {
 		setAnchorElUser(event.currentTarget);
-	};
+	}
 
 	const handleCloseNavMenu = () => {
 		setAnchorElNav(null);
-	};
+	}
 
 	const handleCloseUserMenu = () => {
 		setAnchorElUser(null);
-	};
+	}
 
 	return (
-		<AppBar sx={{ mb: '25px' }} position="static">
+		<AppBar position="static">
 			<Container maxWidth="xl">
 				<Toolbar disableGutters>
 					<Box
@@ -51,8 +53,8 @@ const ResponsiveAppBar = ({ settings }) => {
 					<Typography
 						variant="h6"
 						noWrap
-						component="a"
-						href="/"
+						component={RouterLink}
+						to='/'
 						sx={{
 							mr: 2,
 							display: { xs: 'none', md: 'flex' },
@@ -111,10 +113,9 @@ const ResponsiveAppBar = ({ settings }) => {
 					<Typography
 						variant="h5"
 						noWrap
-						component="a"
-						href=""
+						component={RouterLink}
+						to='/'
 						sx={{
-							mr: 2,
 							display: { xs: 'flex', md: 'none' },
 							flexGrow: 1,
 							fontFamily: 'monospace',
@@ -126,22 +127,17 @@ const ResponsiveAppBar = ({ settings }) => {
 					>
 						LOGO
 					</Typography>
-					<Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-						{pages.map((page) => (
-							<Button
-								key={page}
-								onClick={handleCloseNavMenu}
-								sx={{ my: 2, color: 'white', display: 'block' }}
-							>
-								{page}
-							</Button>
-						))}
-					</Box>
-
+					<Divider sx={{ mx: 2, borderColor: '#fff' }} orientation="vertical" flexItem />
+					<Typography
+						sx={{flexGrow: 1, display: { xs: 'none', md: 'flex'}}}
+						component='h1'
+						variant='h5'
+						fontWeight='bold'
+					>{title}</Typography>
 					<Box sx={{ flexGrow: 0 }}>
 						<Tooltip title="Abrir Opções">
 							<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-								<Avatar alt="Av" src="" />
+								<Avatar alt="Avater" src={avatarUrl} />
 							</IconButton>
 						</Tooltip>
 						<Menu
@@ -157,11 +153,17 @@ const ResponsiveAppBar = ({ settings }) => {
 								vertical: 'top',
 								horizontal: 'right',
 							}}
-							open={Boolean(anchorElUser)}
+							open={!!anchorElUser}
 							onClose={handleCloseUserMenu}
 						>
 							{Object.entries(settings).map(([ label, action ]) => (
-								<MenuItem key={label} onClick={action}>
+								<MenuItem
+									key={label}
+									onClick={() => {
+										action()
+										setAnchorElUser(null)
+									}}
+								>
 									<Typography textAlign="center">{label}</Typography>
 								</MenuItem>
 							))}
@@ -174,7 +176,9 @@ const ResponsiveAppBar = ({ settings }) => {
 };
 
 ResponsiveAppBar.propTypes = {
-	settings: PropTypes.objectOf(PropTypes.func)
+	settings: PropTypes.objectOf(PropTypes.func).isRequired,
+	title: PropTypes.string.isRequired,
+	avatarUrl: PropTypes.string
 }
 
 export default ResponsiveAppBar;

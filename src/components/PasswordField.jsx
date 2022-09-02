@@ -1,7 +1,7 @@
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { FormControl, IconButton, InputAdornment, OutlinedInput, InputLabel } from '@mui/material'
-import { useEffect, useMemo, useState } from "react"
-
+import { useEffect } from 'react'
+import { useMemo, useState } from "react"
 import { putToggle } from '../helper/short-functions'
 
 function PasswordField({ label, containerSx, onChangeVisibility, ...props }) {
@@ -16,10 +16,11 @@ function PasswordField({ label, containerSx, onChangeVisibility, ...props }) {
 	}, [ showPassword, onChangeVisibility ])
 
 	return (
-		<FormControl sx={{ bgcolor: '#fff',  width: '100%', ...containerSx }}>
+		<FormControl sx={containerSx}>
 			<InputLabel htmlFor={id}>{ label }</InputLabel>
 			<OutlinedInput
 				{ ...props }
+				sx={{ bgcolor: '#fff' }}
 				id={id}
 				label={label}
 				type={showPassword ? 'text' : 'password'}

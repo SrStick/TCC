@@ -6,10 +6,7 @@ export function useTrackUploadProgress() {
 	const [ uploadProgress, setUploadProgress ] = useState(0)
 	const [ filesInfo, setFilesInfo ] = useState([])
 
-	const userUID = getUserID()
-
 	const addFilesToQueue = useCallback(files => {
-		
 		const currentFile = files[0]
 		let fileExt, fileRef
 
@@ -27,19 +24,18 @@ export function useTrackUploadProgress() {
 
 				setFilesInfo(oldInfos => [...oldInfos, newData])
 				const slicer = files.slice(1)
-				if(slicer.length) {
-					/* isso é pra dar tempo de ver a animação da barra. */
-					setTimeout(() => addFilesToQueue(slicer), 1000)
-				}
+				if(slicer.length)
+					addFilesToQueue(slicer)
 
 			}
 		}
 		if (currentFile) {
+			const userUID = getUserID()
 			fileExt = currentFile.name.split('.')[1]
 			fileRef = ref(getStorage(), `${userUID}/${Date.now()}.${fileExt}`)
 			uploadBytesResumable(fileRef, currentFile).on('state_changed', stateCallbacks)
 		}
-	}, [ userUID ])
+	}, [])
 
 	return [ uploadProgress, filesInfo, addFilesToQueue ]
 }
