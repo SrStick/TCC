@@ -6,6 +6,7 @@ import { Routes, Route } from 'react-router-dom'
 import Login from './views/Login/Login';
 import Home from "./views/Home/Home";
 import Register from './views/Register/Register';
+
 import UploadForm from './views/UploadForm/UploadForm';
 import Modality from './views/admin/Modality';
 
