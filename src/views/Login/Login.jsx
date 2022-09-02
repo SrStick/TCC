@@ -13,17 +13,17 @@ import {
 	FormControlLabel,
 	Checkbox,
 	Divider,
-	Typography,
 	Stack
 } from "@mui/material";
 
 import { useCallback, useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
-import logo from '../iff.png';
+import logo from '../../assets/iff-logo.png';
 
-import { putEventTargetValue, putToggle } from '../helper/short-functions'
-import { PasswordField } from "../components";
+import { putEventTargetValue, putToggle } from '../../helper/short-functions'
+import { PasswordField } from "../../components";
+import './styles.css'
 
 export default function Login() {
 	const [ email, setEmail ] = useState('')
@@ -48,21 +48,26 @@ export default function Login() {
 	}, [email, password, persistAuth])
 
 	return (
-		<Stack alignItems='center' mt='20px'>
-			<img width='150' src={logo} alt="react logo" />
-			<Typography m='0' variant="h2" component='h1'>Bem-vindo</Typography>
-			<Stack style={{ minWidth: '350px' }}>
+		<Stack className="login-container">
+			<Stack className="logo-container">
+				<img className="logo" src={logo} alt="iff logo" />
+			</Stack>
+			<Stack className="login-form">
 				<TextField
-					sx={{ mt: '15px', bgcolor: '#fff' }}
+					sx={{bgcolor: '#fff', width: '100%' }}
 					label="Email"
 					onChange={putEventTargetValue(setEmail)}
 				/>
 				<PasswordField
-					containerSx={{ mt: '15px' }}
 					onChange={putEventTargetValue(setPassword)}
 					label='Senha'
 				/>
-				<Box sx={{ typography: 'body1', bgcolor: '#fff', mt: '15px', p: '10px' }} className="flex-col-center">
+				<Button className="btn-submit"
+					onClick={singIn}
+					variant="contained"
+					disabled={disableSingIn}
+				>Entrar</Button>
+				<Box sx={{ typography: 'body1'}} className="flex-col-center">
 					<span>
 						Não tem uma conta?
 						<Link component={RouterLink} to='/singin' ml='5px'>Registre-se</Link>
@@ -77,12 +82,6 @@ export default function Login() {
 						control={<Checkbox onChange={putToggle(setPesistAuth)} checked={persistAuth}/>}
 					/>
 				</Box>
-				<Button
-					sx={{ mt:'15px' }}
-					onClick={singIn}
-					variant="contained"
-					disabled={disableSingIn}
-				>Entrar</Button>
 			</Stack>
 		</Stack>
 	)

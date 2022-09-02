@@ -11,14 +11,14 @@ import {
 } from "@mui/material";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { AppBar, FileView, TaskView } from "../components";
+import { AppBar, FileView, TaskView } from "../../components";
 
 import { getAuth } from "firebase/auth";
 
 import AddIcon from '@mui/icons-material/Add';
 import * as Firebase from 'firebase/firestore';
 import { useNavigate } from "react-router-dom";
-import * as FirebaseAux from '../helper/firebase';
+import * as FirebaseAux from '../../helper/firebase';
 
 function TaskFactory(data) {
 	data.date = new Date(data.date).toLocaleDateString()

@@ -5,10 +5,10 @@ import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCallback, useEffect, useState } from "react";
-import { useTrackUploadProgress } from "../helper/hooks";
-import { putEventTargetValue } from '../helper/short-functions'
+import { useTrackUploadProgress } from "../../helper/hooks";
+import { putEventTargetValue } from '../../helper/short-functions'
 import { addDoc, collection, getFirestore } from "firebase/firestore";
-import { Colllections, getUserID, Status } from "../helper/firebase";
+import { Colllections, getUserID, Status } from "../../helper/firebase";
 
 
 function UploadForm() {
@@ -18,7 +18,7 @@ function UploadForm() {
 	const [ description, setDescription ] = useState('')
 	const [ uploadProgress, filesInfo, trackFiles ] = useTrackUploadProgress()
 
-	useEffect(() => setModalities(require('../modalities.json')), [])
+	useEffect(() => setModalities(require('../../modalities.json')), [])
 
 	const removeFile = useCallback(name => {
 		setFiles(prevValue => prevValue.filter(file => file.name !== name));

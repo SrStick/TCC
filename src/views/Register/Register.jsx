@@ -3,10 +3,12 @@ import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { collection, getFirestore, setDoc } from 'firebase/firestore'
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
-import { PasswordField } from "../components";
+import { PasswordField } from "../../components";
 
-import { putEventTargetValue } from '../helper/short-functions'
-import { Colllections } from "../helper/firebase";
+import { putEventTargetValue } from '../../helper/short-functions'
+import { Colllections } from "../../helper/firebase";
+import './styles.css'
+import logo from '../../assets/iff-logo.png';
 
 export default function Register() {
 	const [ name, setName ] = useState('')
@@ -43,17 +45,17 @@ export default function Register() {
 		}
 	}
 
-	const fieldStyle = { mb: '10px', bgcolor: '#fff', width: '400px' }
-
 	return (
-		<div style={{ height: '85vh' }}>
-			<Box sx={{ mt: '10vh' }} className='flex-col-center'>
-				<TextField sx={fieldStyle} label='Nome'  onBlur={putEventTargetValue(setName)}/>
-				<TextField sx={fieldStyle} label='Matrícula' onBlur={putEventTargetValue(setRegistry)}/>
-				<FormControl>
+		<div className="register-container">
+			<Box className="logo-container">
+				<img className="logo" src={logo} alt="iff logo" />
+			</Box>
+			<Box className='register-form'>
+				<TextField sx={{ width: '100%'}} label='Nome'  onBlur={putEventTargetValue(setName)}/>
+				<TextField sx={{ width: '100%'}} label='Matrícula' onBlur={putEventTargetValue(setRegistry)}/>
+				<FormControl sx={{ width: '100%'}}>
 					<InputLabel>Email</InputLabel>
 					<OutlinedInput
-						sx={fieldStyle}
 						label='Email'
 						onBlur={putEventTargetValue(setEmail)}
 						endAdornment={
@@ -63,20 +65,22 @@ export default function Register() {
 				</FormControl>
 				<PasswordField
 					label='Senha'
-					containerSx={fieldStyle}
 					onBlur={putEventTargetValue(setPassword)}
 					onChangeVisibility={setShowPassword}
 				/>
 				<TextField
-					sx={fieldStyle}
+					sx={{ width: '100%'}}
 					label='Confirmar senha'
 					type={showPassword ? 'text' : 'password'}
 					onBlur={putEventTargetValue(setPasswordConfirmation)}
 				/>
-				<Typography component='p' variant="body1" mb="5px">
-					Já tem uma conta? <Link to="/" component={RouterLink}>Entre aqui</Link>
+				<Button className="btn-submit" onClick={singUp} variant="contained">Cadastrar-se</Button>
+				<Typography component='p' variant="body1">
+					Já possui uma conta conta?
 				</Typography>
-				<Button onClick={singUp} variant="contained">Cadastrar-se</Button>
+				<Typography component='p' variant="body1">
+					<Link to="/" component={RouterLink}>Clique aqui</Link> para realizar login
+				</Typography>
 			</Box>
 		</div>
 	)

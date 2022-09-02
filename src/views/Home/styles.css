@@ -1,0 +1,24 @@
+
+.container {
+	display: grid;
+	height: 100vh;
+	grid-template-columns: 230px 1fr;
+	grid-template-rows: 1fr;
+	grid-template-areas: "asideLeft main";
+}
+
+.aside-left {
+	grid-area: asideLeft;
+	background-color: #1d2229;
+	padding: 10px;
+	overflow: auto;
+}
+
+.main {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	grid-area: main;
+	background-color: var(--bg-primary);
+	overflow: auto;
+}

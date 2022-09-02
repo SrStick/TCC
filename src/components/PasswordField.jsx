@@ -16,7 +16,7 @@ function PasswordField({ label, containerSx, onChangeVisibility, ...props }) {
 	}, [ showPassword, onChangeVisibility ])
 
 	return (
-		<FormControl sx={{ bgcolor: '#fff', ...containerSx }}>
+		<FormControl sx={{ bgcolor: '#fff',  width: '100%', ...containerSx }}>
 			<InputLabel htmlFor={id}>{ label }</InputLabel>
 			<OutlinedInput
 				{ ...props }

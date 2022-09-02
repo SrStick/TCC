@@ -3,10 +3,10 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom'
 
-import Login from './views/Login';
-import Home from "./views/Home";
-import Register from './views/Register';
-import UploadForm from './views/UploadForm';
+import Login from './views/Login/Login';
+import Home from "./views/Home/Home";
+import Register from './views/Register/Register';
+import UploadForm from './views/UploadForm/UploadForm';
 import { getUserInfo, UserInfoContext } from './helper/firebase';
 
 function App() {
@@ -62,5 +62,8 @@ function App() {
       </Routes>
     )
 }
+
+
+
 
 export default App;
