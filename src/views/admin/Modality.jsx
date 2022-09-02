@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
-import { Layout } from "../../components"
 import { Colllections } from "../../helper/firebase"
 import { Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField } from "@mui/material"
 import { Box } from "@mui/material"
@@ -62,11 +61,18 @@ function Modality() {
 	}, [])
 
 	return (
-		<Layout headerTitle='Modalidades' indent>
-			<Button startIcon={<AddIcon/>} variant='contained'>Nova Modalidade</Button>
+		<>
+			<Button
+				startIcon={<AddIcon/>}
+				variant='contained'
+				onClick={() => {
+					setClickedItemIndex(null)
+					openFormDialog()
+				}}
+			>Nova Modalidade</Button>
 			<Box mt='10px'>
-				{modalities.map(mod => (
-					<Accordion key={mod.id} onClickCapture={() => setClickedItemIndex(mod.id)}>
+				{modalities.map((mod, index) => (
+					<Accordion key={mod.id} onClickCapture={() => setClickedItemIndex(index)}>
 						<AccordionSummary expandIcon={<ExpandMoreIcon />}>
 							<Typography>{mod.description}</Typography>
 						</AccordionSummary>
@@ -99,14 +105,20 @@ function Modality() {
 				data={modalities[clickedItemIndex]}
 				onClose={closeFormDialog}
 			/>
-		</Layout>
+		</>
 	)
 }
 
-function FormDialog({ open, onClose, title, data }) {
+function FormDialog({ open, onClose, title, data = {} }) {
 	const [description, setDescription] = useState('')
 	const [limit, setLimit] = useState(0)
 	const [parity, setParity] = useState(0)
+
+	useEffect(() => {
+		setDescription(data.description)
+		setLimit(data.limit)
+		setParity(data.parity)
+	}, [ data ])
 
 	const save = useCallback(() => {
 		const firestore = getFirestore()
@@ -120,7 +132,7 @@ function FormDialog({ open, onClose, title, data }) {
 
 	return (
 		<Dialog fullScreen open={open} onClose={onClose}>
-			<AppBar sx={{ position: 'relative' }}>
+			<AppBar sx={{ position: 'relative', mb: '25px' }}>
 				<Toolbar>
 					<IconButton edge='start' color='inherit' onClick={onClose}>
 						<CloseIcon/>
@@ -128,25 +140,25 @@ function FormDialog({ open, onClose, title, data }) {
 					<Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
 						{title}
 					</Typography>
-					<Button onClick={save}>salvar</Button>
+					<Button sx={{ color: 'inherit' }} onClick={save}>salvar</Button>
 				</Toolbar>
 			</AppBar>
-			<Stack>
+			<Stack spacing={2}>
 				<TextField
 					multiline
-					defaultValue={data?.description}
-					onBlur={putEventTargetValue(setDescription)}
+					value={description}
+					onChange={putEventTargetValue(setDescription)}
 					label='Descrição'
 				/>
 				<TextField
-					defaultValue={data?.limit}
-					onBlur={putEventTargetValue(setLimit)}
+					value={limit}
+					onChange={putEventTargetValue(setLimit, Number)}
 					type='number'
 					label='Limite'
 				/>
 				<TextField
-					defaultValue={data?.parity}
-					onBlur={putEventTargetValue(setParity)}
+					value={parity}
+					onChange={putEventTargetValue(setParity, Number)}
 					type='number'
 					label='Paridade'/>
 			</Stack>

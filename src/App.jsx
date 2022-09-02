@@ -21,6 +21,7 @@ function App() {
 
 	useEffect(() => {
 		async function onChange(user) {
+			setLoading(true)
 			setLogged(!!user)
 
 			if (user) {

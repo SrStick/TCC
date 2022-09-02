@@ -44,13 +44,6 @@ export default function Register() {
 				throw error
 			}
 
-			const registryMatch = registry.match(/^(\d{4})\d+$/)
-			const currentYear = new Date().getFullYear()
-			if (!(registryMatch && registryMatch[1] == currentYear)) {
-				error = { message: 'matrícula inválida', code: CustomErrorCodes.INVALID_REGISTRY }
-				throw error
-			}
-
 			let user
 			try {
 				user = await createUser(getAuth(), filledEmail, password).then(({ user }) => user)

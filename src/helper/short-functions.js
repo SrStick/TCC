@@ -1,5 +1,8 @@
-export function putEventTargetValue(setFunction) {
-	return ev => setFunction(ev.target.value)
+export function putEventTargetValue(setFunction, Converter) {
+	return ({ target: { value } }) => {
+		if (Converter) setFunction(Converter(value))
+		else setFunction(value)
+	}
 }
 
 export function putToggle(setFunction) {
