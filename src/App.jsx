@@ -3,10 +3,10 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom'
 
-import Login from './views/Login';
+import Login from './views/Login/Login';
 import Home from "./views/home";
 import Register from './views/UserRegister';
-import UploadForm from './views/UploadForm';
+import UploadForm from './views/UploadForm/UploadForm';
 import Modality from './views/admin/Modality';
 
 import { getUserInfo, UserContext } from './helper/firebase';

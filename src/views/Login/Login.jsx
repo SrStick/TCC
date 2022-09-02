@@ -62,7 +62,7 @@ export default function Login() {
 			</Stack>
 			<Stack className="login-form">
 				<TextField
-					sx={{bgcolor: '#fff', width: '100%' }}
+					sx={{ bgcolor: '#fff', width: '100%' }}
 					label="Email"
 					onChange={putEventTargetValue(setEmail)}
 					onBlur={getPlaceholder}
@@ -70,6 +70,7 @@ export default function Login() {
 				<PasswordField
 					onChange={putEventTargetValue(setPassword)}
 					label='Senha'
+					containerSx={{ width: '100%' }}
 				/>
 				<Button className="btn-submit"
 					onClick={singIn}
