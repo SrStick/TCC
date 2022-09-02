@@ -5,3 +5,7 @@ export function putEventTargetValue(setFunction) {
 export function putToggle(setFunction) {
 	return () => setFunction(prevValue => !prevValue)
 }
+
+export function percentCalc(currentValue, totalValue) {
+	return Math.round((currentValue / totalValue) * 100)
+}

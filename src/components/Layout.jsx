@@ -1,10 +1,12 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material'
-import { useCallback, useMemo, useState, Fragment } from 'react'
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Box } from '@mui/material'
+import { useCallback, useMemo, useState, useContext } from 'react'
 import { getAuth } from 'firebase/auth'
 
 import AppBar from './AppBar'
+import { UserContext } from '../helper/firebase'
+import { Outlet, useLocation } from 'react-router-dom'
 
-export default function Layout({ children }) {
+export default function Layout() {
 
 	const [ exitDialogIsOpen, setExitDialogIsOpen ] = useState(false)
 	
@@ -12,18 +14,38 @@ export default function Layout({ children }) {
 
 	const singOut = useCallback(() => getAuth().signOut(), [])
 
+	const user = useContext(UserContext)
+	const { state } = useLocation()
+
 	const appBarSettings = useMemo(() => {
-		return {
-			Sair: () => setExitDialogIsOpen(true)
+		const settings = {}
+
+		if (user.isAdmin) {
+			settings['Novo Admin'] = () => console.log('colocar link para a criação de adm')
 		}
-	}, [])
+		settings['Meu Perfil'] = () => console.log('colocar link pro perfil')
+		settings['Sair'] = () => setExitDialogIsOpen(true)
+
+
+		return settings
+	}, [ user ])
+
+	const getHederTitle = useCallback(() => {
+		if(state)
+			return state.headerTitle
+		return 'Home'
+	}, [ state ])
 
 	return (
-		<Fragment>
-			<AppBar settings={appBarSettings}/>
-
-			{children}
-			
+		<>
+			<AppBar
+				settings={appBarSettings}
+				title={getHederTitle()}
+				avatarUrl={getAuth().currentUser.photoURL}
+			/>
+			<Box sx={{ my: '20px' }}>
+				<Outlet/>
+			</Box>
 			<Dialog open={exitDialogIsOpen} onClose={closeExitDialog}>
 				<DialogTitle>Deseja realmente sair?</DialogTitle>
 				<DialogContent>
@@ -39,6 +61,6 @@ export default function Layout({ children }) {
 					</DialogActions>
 				</DialogContent>
 			</Dialog>
-		</Fragment>
+		</>
 	)
 }

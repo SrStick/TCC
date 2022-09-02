@@ -1,45 +1,29 @@
 import {
 	Button,
 	Dialog,
-	DialogActions,
 	DialogContent,
-	DialogContentText,
 	DialogTitle,
 	Divider,
 	List,
 	Stack
 } from "@mui/material";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { AppBar, FileView, TaskView } from "../components";
-
-import { getAuth } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { FileView, TaskView } from "../../components";
 
 import AddIcon from '@mui/icons-material/Add';
 import * as Firebase from 'firebase/firestore';
 import { useNavigate } from "react-router-dom";
-import * as FirebaseAux from '../helper/firebase';
+import * as FirebaseAux from '../../helper/firebase';
 
 function TaskFactory(data) {
-	data.date = new Date(data.date).toLocaleDateString()
 	delete data.authorID
 	return oldTasks => [...oldTasks, data]
 }
 
-function Home() {
-	const [exitDialogIsOpen, setExitDialogIsOpen] = useState(false)
+function CommumUserHome() {
 	const [tasks, setTasks] = useState([])
 	const [clickedTask, setClickedTask] = useState()
-
-	const closeExitDialog = () => setExitDialogIsOpen(false)
-
-	const singOut = () => getAuth().signOut()
-
-	const appBarSettings = useMemo(() => {
-		return {
-			Sair: () => setExitDialogIsOpen(true)
-		}
-	}, [])
 
 	const navigate = useNavigate()
 
@@ -62,9 +46,7 @@ function Home() {
 	}, [])
 
 	return (
-		<Fragment>
-			<AppBar settings={appBarSettings} />
-
+		<>
 			<List sx={{ width: '100%', maxWidth: 260 }}>
 				{tasks.map(task =>
 					<TaskView
@@ -75,7 +57,7 @@ function Home() {
 				)}
 			</List>
 
-			<Stack mt='25px' alignItems='center'>
+			<Stack alignItems='center'>
 				<Button
 					variant="contained"
 					startIcon={<AddIcon />}
@@ -93,28 +75,8 @@ function Home() {
 					</Stack>
 				</DialogContent>
 			</Dialog>
-
-			<Dialog open={exitDialogIsOpen} onClose={closeExitDialog}>
-				<DialogTitle>Deseja realmente sair?</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						Sua conta será desconectada e você terá que fazer login novamente.
-					</DialogContentText>
-					<DialogActions>
-						<Button
-							color="error"
-							variant="contained"
-							onClick={singOut}
-						>
-							Confirmar
-						</Button>
-
-						<Button onClick={closeExitDialog}>Voltar</Button>
-					</DialogActions>
-				</DialogContent>
-			</Dialog>
-		</Fragment>
+		</>
 	)
 }
 
-export default Home
+export default CommumUserHome
