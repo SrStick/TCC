@@ -15,7 +15,7 @@ import Divider from '@mui/material/Divider';
 
 import PropTypes from 'prop-types';
 
-import logo from '../iff.png'
+import logo from '../assets/iff.png'
 
 import { Link as RouterLink } from 'react-router-dom'
 
