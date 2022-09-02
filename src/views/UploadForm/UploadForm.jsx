@@ -5,12 +5,12 @@ import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCallback, useEffect, useState } from "react";
-import { useTrackUploadProgress } from "../helper/hooks";
-import { percentCalc, putEventTargetValue } from '../helper/short-functions'
+import { useTrackUploadProgress } from "../../helper/hooks";
+import { percentCalc, putEventTargetValue } from '../../helper/short-functions'
 import { addDoc, collection, getFirestore, Timestamp } from "firebase/firestore";
-import { Colllections, getUserID, Status } from "../helper/firebase";
+import { Colllections, getUserID, Status } from "../../helper/firebase";
 
-import { Layout } from '../components'
+import { Layout } from '../../components'
 
 const DESCRIPTION_LIMIT = 300
 
@@ -22,7 +22,7 @@ function UploadForm() {
 	const [ descriptionSizeProgress, setDescriptionSizeProgress ] = useState(0)
 	const [ uploadProgress, filesInfo, trackFiles ] = useTrackUploadProgress()
 
-	useEffect(() => setModalities(require('../modalities.json')), [])
+	useEffect(() => setModalities(require('../../modalities.json')), [])
 
 	useEffect(() => {
 		setDescriptionSizeProgress(percentCalc(description.length, DESCRIPTION_LIMIT))

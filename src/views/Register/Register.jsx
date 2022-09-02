@@ -1,4 +1,4 @@
-import { Box, Button, FormControl, FormHelperText, InputAdornment, InputLabel, Link, OutlinedInput, TextField, Typography } from "@mui/material";
+import { Button, FormControl, FormHelperText, InputAdornment, InputLabel, Link, OutlinedInput, TextField, Typography } from "@mui/material";
 import { 
 	createUserWithEmailAndPassword as createUser,
 	getAuth,
@@ -7,11 +7,13 @@ import {
 import { doc, getFirestore, setDoc } from 'firebase/firestore'
 import { useState } from "react";
 import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom'
-import { PasswordField } from "../components";
+import { PasswordField } from "../../components";
 
-import { putEventTargetValue } from '../helper/short-functions'
-import { Colllections } from "../helper/firebase";
+import { putEventTargetValue } from '../../helper/short-functions'
+import { Colllections } from "../../helper/firebase";
 import { useCallback } from "react";
+import logo from '../../assets/iff.png';
+import './styles.css'
 
 const CustomErrorCodes = {
 	PASS_NOT_MATCH: 'pass_not_match',
@@ -86,12 +88,15 @@ export default function Register() {
 		})
 	}
 
-	const containerStyle = { mb: '10px', width: '400px' }
+	const containerStyle = { mb: '10px', width: '100%' }
 	const inputProps = { style: { backgroundColor: '#fff' } }
 
 	return (
-		<div style={{ height: '85vh' }}>
-			<Box sx={{ mt: '10vh' }} className='flex-col-center'>
+		<div className="register-container">
+			<div className="logo-container">
+				<img className="logo" src={logo} alt="iff logo" />
+			</div>
+			<div className="register-form">
 				<TextField
 					sx={containerStyle}
 					label='Nome completo'
@@ -141,8 +146,8 @@ export default function Register() {
 				<Typography component='p' variant="body1" mb="5px">
 					Já tem uma conta? <Link to="/" component={RouterLink}>Entre aqui</Link>
 				</Typography>
-				<Button onClick={singUp} variant="contained">Cadastrar-se</Button>
-			</Box>
+				<Button className="btn-submit" onClick={singUp} variant="contained">Cadastrar-se</Button>
+			</div>
 		</div>
 	)
 }

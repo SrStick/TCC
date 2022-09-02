@@ -19,7 +19,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
-import logo from '../../assets/iff-logo.png';
+import logo from '../../assets/iff.png';
 
 import { putEventTargetValue, putToggle } from '../../helper/short-functions'
 import { PasswordField } from "../../components";

@@ -10,8 +10,6 @@ import {
 
 import { useEffect, useState } from "react";
 import { FileView, TaskView } from "../../components";
-import { useEffect, useState } from "react";
-import { FileView, TaskView } from "../../components";
 
 import AddIcon from '@mui/icons-material/Add';
 import * as Firebase from 'firebase/firestore';
