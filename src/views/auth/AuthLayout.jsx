@@ -1,0 +1,43 @@
+import { Stack, useTheme } from "@mui/material"
+import logo from '../../assets/iff.png'
+
+function AuthLayout({ children }) {
+	const theme = useTheme()
+
+	return (
+		<Stack
+			sx={{
+				height: '100vh',
+				flexDirection: 'row',
+				[theme.breakpoints.down('md')]: {
+					marginTop: '40px',
+					flexDirection: 'column'
+				}
+			}
+		}>
+			<Stack
+				alignItems='center'
+				justifyContent='center'
+				width='100%'
+				borderRight='1px solid #bdbdbd'
+			>
+				<img
+					src={logo}
+					alt='logo do iff'
+					style={{ width: '20vw' }}
+				/>
+			</Stack>
+			<Stack
+				alignItems='center'
+				justifyContent='center'
+				width='100%'
+				gap='10px'
+				padding='35px'
+			>
+				{children}
+			</Stack>
+		</Stack>
+	)
+}
+
+export default AuthLayout

@@ -12,9 +12,10 @@ export default function Layout() {
 	
 	const closeExitDialog = useCallback(() => setExitDialogIsOpen(false), [])
 
-	const singOut = useCallback(() => getAuth().signOut(), [])
-
 	const user = useContext(UserContext)
+
+	const singOut = useCallback(() => user.singOut(), [ user ])
+
 	const { state } = useLocation()
 
 	const appBarSettings = useMemo(() => {
@@ -33,7 +34,7 @@ export default function Layout() {
 	const getHederTitle = useCallback(() => {
 		if(state)
 			return state.headerTitle
-		return 'Home'
+		return 'Início'
 	}, [ state ])
 
 	return (

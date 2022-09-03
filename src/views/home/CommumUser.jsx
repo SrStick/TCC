@@ -62,7 +62,7 @@ function CommumUserHome() {
 				<Button
 					variant="contained"
 					startIcon={<AddIcon />}
-					onClick={() => navigate('/upload-form')}
+					onClick={() => navigate('upload-form', { state: { headerTitle: 'Nova Atividade' } })}
 				>Nova atividade</Button>
 			</Stack>
 
