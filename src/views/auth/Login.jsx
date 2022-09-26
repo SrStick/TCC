@@ -17,19 +17,24 @@ import {
 
 
 import { useCallback, useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 
 import { putEventTargetValue, putToggle } from '../../helper/short-functions'
 import { PasswordField } from "../../components";
 import AuthLayout from "./AuthLayout";
+import { useContext } from "react";
+import { UserContext } from "../../helper/firebase";
 
-export default function Login({ onSingIn }) {
+export default function Login() {
 	const [ email, setEmail ] = useState('')
 	const [ password, setPassword ] = useState('')
 	const [ persistAuth, setPesistAuth ] = useState(true)
 	const [ disableSingIn, setDisableSingIn ] = useState(true)
 	const [ singInPlaceholder, setSingInPlaceholder ] = useState('')
+
+	const user = useContext(UserContext)
+	const navigate = useNavigate()
 
 	useEffect(() => {
 		setDisableSingIn(email.trim() === '' || password.trim() === '')
@@ -46,17 +51,15 @@ export default function Login({ onSingIn }) {
 		if(!persistAuth)
 			await setAuthPersistence(auth, browserSessionPersistence)
 
-		let credentials
 		try {
-			credentials = await signInWithEmailAndPassword(auth, email, password)
+			await signInWithEmailAndPassword(auth, email, password)
+			user.fetchData(() => navigate('/'))
 		} catch (err) {
 			if (process.env.NODE_ENV === 'development')
 				console.log(err.toString())
 		}
-		if(credentials)
-			onSingIn(credentials.user)
 
-	}, [email, password, persistAuth, onSingIn])
+	}, [email, password, persistAuth, user, navigate])
 
 	return (
 		<AuthLayout>
@@ -76,6 +79,7 @@ export default function Login({ onSingIn }) {
 				onClick={singIn}
 				variant="contained"
 				disabled={disableSingIn}
+				
 			>Entrar</Button>
 			<Stack sx={{ typography: 'body1' }} alignItems='center'>
 				<span>

@@ -7,10 +7,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCallback, useEffect, useState } from "react";
 import { useTrackUploadProgress } from "../../helper/hooks";
 import { percentCalc, putEventTargetValue } from '../../helper/short-functions'
-import { addDoc, collection, getFirestore, Timestamp } from "firebase/firestore";
-import { Colllections, getUserID, Status } from "../../helper/firebase";
-
-import { Layout } from '../../components'
+import { addDoc, collection, getDocs, getFirestore, Timestamp } from "firebase/firestore";
+import { Collections, getUserID, Status, UserContext } from "../../helper/firebase";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 
 const DESCRIPTION_LIMIT = 300
 
@@ -22,7 +22,16 @@ function UploadForm() {
 	const [ descriptionSizeProgress, setDescriptionSizeProgress ] = useState(0)
 	const [ uploadProgress, filesInfo, trackFiles ] = useTrackUploadProgress()
 
-	useEffect(() => setModalities(require('../../modalities.json')), [])
+	const user = useContext(UserContext)
+	const navigate = useNavigate()
+
+	useEffect(() => {
+		const modalitiesCollection = collection(getFirestore(), 'modalities')
+		getDocs(modalitiesCollection).then(({ docs }) => {
+			const docsView = docs.map(doc => ({ id: doc.id, description: doc.get('description') }))
+			setModalities(docsView)
+		})
+	}, [])
 
 	useEffect(() => {
 		setDescriptionSizeProgress(percentCalc(description.length, DESCRIPTION_LIMIT))
@@ -49,15 +58,18 @@ function UploadForm() {
 	}
 
 	const onFinishUpload = useCallback(files => {
-		addDoc(collection(getFirestore(), Colllections.TASKS), {
+		addDoc(collection(getFirestore(), Collections.TASKS), {
 			description,
 			modality,
 			status: Status.EM_ANALISE,
 			date: Timestamp.now(),
-			authorID: getUserID(),
+			author: {
+				uid: getUserID(),
+				name: user.info.name
+			},
 			files
-		})
-	}, [ description, modality ])
+		}).then(() => navigate('/'))
+	}, [ description, modality, user, navigate ])
 
 	useEffect(() => {
 		if (filesInfo.length === files.length && files.length !== 0) {
@@ -76,7 +88,7 @@ function UploadForm() {
 	const beginUpload = useCallback(() => trackFiles(files), [ files, trackFiles ])
 
 	return (
-		<Layout headerTitle='Preencha o Formulário'>
+		<>
 			<Stack alignItems='center' spacing={5}>
 				<FormControl sx={{ width: '400px' }}>
 					<InputLabel>Modalidade</InputLabel>
@@ -85,8 +97,8 @@ function UploadForm() {
 						onChange={putEventTargetValue(setModality)}
 						value={modality}
 					>
-						{modalities.map(({ grupo }, i) => (
-							<MenuItem key={grupo} value={i}>{grupo}</MenuItem>
+						{modalities.map(({ description, id }) => (
+							<MenuItem key={description} value={id}>{description}</MenuItem>
 						))}
 					</Select>
 				</FormControl>
@@ -129,7 +141,7 @@ function UploadForm() {
 				</Stack>
 				
 				<LinearProgress
-					sx={{ width: '25%', transition: 'none' }}
+					sx={{ width: '25%' }}
 					variant='determinate'
 					value={uploadProgress}
 					color="secondary"
@@ -140,13 +152,13 @@ function UploadForm() {
 				
 				<Button variant="contained" endIcon={<SendIcon/>} onClick={beginUpload}>Enviar</Button>
 			</Stack>
-		</Layout>
+		</>
 	)
 }
 
-function FileItem({ name, onClose }) {
+function FileItem({ name, onClose, onDoubleClick }) {
 	return (
-		<Stack alignItems='center'>
+		<Stack alignItems='center' onDoubleClick={onDoubleClick}>
 			<CloseIcon
 				color="error"
 				fontSize="0.7rem"

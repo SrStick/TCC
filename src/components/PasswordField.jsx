@@ -1,10 +1,10 @@
 import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { FormControl, IconButton, InputAdornment, OutlinedInput, InputLabel } from '@mui/material'
+import { FormControl, IconButton, InputAdornment, OutlinedInput, InputLabel, FormHelperText } from '@mui/material'
 import { useEffect } from 'react'
 import { useMemo, useState } from "react"
 import { putToggle } from '../helper/short-functions'
 
-function PasswordField({ label, containerSx, onChangeVisibility, ...props }) {
+function PasswordField({ label, containerSx, error, onChangeVisibility, ...props }) {
 
 	const id = useMemo(() => `password-field-${label}`, [ label ])
 
@@ -23,6 +23,7 @@ function PasswordField({ label, containerSx, onChangeVisibility, ...props }) {
 				sx={{ bgcolor: '#fff' }}
 				id={id}
 				label={label}
+				error={!!error}
 				type={showPassword ? 'text' : 'password'}
 				endAdornment={
 					<InputAdornment position="end">
@@ -36,6 +37,7 @@ function PasswordField({ label, containerSx, onChangeVisibility, ...props }) {
 					</InputAdornment>
 				}
 			/>
+			<FormHelperText error={!!error}>{error}</FormHelperText>
 		</FormControl>
 	)
 }

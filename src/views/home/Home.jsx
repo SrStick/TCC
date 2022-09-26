@@ -28,10 +28,10 @@ function Home() {
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		const { Colllections, getUserID } = FirebaseAux
+		const { Collections, getUserID } = FirebaseAux
 		const { query, onSnapshot, where, limit, collection, getFirestore } = Firebase
 		
-		const tasksPath = collection(getFirestore(), Colllections.TASKS)
+		const tasksPath = collection(getFirestore(), Collections.TASKS)
 		const q = query(tasksPath, where('authorID', '==', getUserID()), limit(20))
 		setTasks([])
 

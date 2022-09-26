@@ -6,7 +6,7 @@ import AppBar from './AppBar'
 import { UserContext } from '../helper/firebase'
 import { Outlet, useLocation } from 'react-router-dom'
 
-export default function Layout() {
+function MainLayout() {
 
 	const [ exitDialogIsOpen, setExitDialogIsOpen ] = useState(false)
 	
@@ -22,7 +22,7 @@ export default function Layout() {
 		const settings = {}
 
 		if (user.isAdmin) {
-			settings['Novo Admin'] = () => console.log('colocar link para a criação de adm')
+			settings['Novo Membro de Colegiado'] = () => console.log('colocar link para a criação de adm')
 		}
 		settings['Meu Perfil'] = () => console.log('colocar link pro perfil')
 		settings['Sair'] = () => setExitDialogIsOpen(true)
@@ -32,7 +32,7 @@ export default function Layout() {
 	}, [ user ])
 
 	const getHederTitle = useCallback(() => {
-		if(state)
+		if (state)
 			return state.headerTitle
 		return 'Início'
 	}, [ state ])
@@ -65,3 +65,5 @@ export default function Layout() {
 		</>
 	)
 }
+
+export default MainLayout
