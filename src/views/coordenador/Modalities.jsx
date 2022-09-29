@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
-import { Colllections } from "../../helper/firebase"
+import { Collections } from "../../helper/firebase"
 import { Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField } from "@mui/material"
 import { Box } from "@mui/material"
 
@@ -11,12 +11,12 @@ import { putEventTargetValue } from "../../helper/short-functions"
 
 function Modality() {
 	const [modalities, setModalities] = useState([])
-	const [clickedItemIndex, setClickedItemIndex] = useState()
+	const [clickedItemIndex, setClickedItemIndex] = useState(null)
 	const [formIsOpen, setFormIsOpen] = useState(false)
 
 	const deleteAction = useCallback(() => {
 		const { id: docId } = modalities[clickedItemIndex]
-		deleteDoc(doc(getFirestore(), Colllections.MODALITIES, docId))
+		deleteDoc(doc(getFirestore(), Collections.MODALITIES, docId))
 	}, [ modalities, clickedItemIndex ])
 
 	const closeFormDialog = useCallback(() => {
@@ -27,7 +27,7 @@ function Modality() {
 	const openFormDialog = useCallback(() => setFormIsOpen(true), [])
 
 	useEffect(() => {
-		const modalities = collection(getFirestore(), Colllections.MODALITIES)
+		const modalities = collection(getFirestore(), Collections.MODALITIES)
 		const q = query(modalities, limit(20))
 
 		if(process.env.NODE_ENV === 'development') setModalities([])
@@ -100,7 +100,7 @@ function Modality() {
 
 			</Box>
 			<FormDialog
-				title={ (clickedItemIndex ? 'Editar' : 'Nova') + ' Modalidade' }
+				title={ (clickedItemIndex !== null ? 'Editar' : 'Nova') + ' Modalidade' }
 				open={formIsOpen}
 				data={modalities[clickedItemIndex]}
 				onClose={closeFormDialog}
@@ -109,24 +109,26 @@ function Modality() {
 	)
 }
 
-function FormDialog({ open, onClose, title, data = {} }) {
+function FormDialog({ open, onClose, title, data }) {
 	const [description, setDescription] = useState('')
 	const [limit, setLimit] = useState(0)
 	const [parity, setParity] = useState(0)
 
 	useEffect(() => {
-		setDescription(data.description)
-		setLimit(data.limit)
-		setParity(data.parity)
-	}, [ data ])
+		if(data) {
+			setDescription(data.description)
+			setLimit(data.limit)
+			setParity(data.parity)
+		}
+	}, [data])
 
 	const save = useCallback(() => {
 		const firestore = getFirestore()
 		const newData = { description, limit, parity }
 		if(data) {
-			updateDoc(doc(firestore, Colllections.MODALITIES, data.id), newData).then(onClose)
+			updateDoc(doc(firestore, Collections.MODALITIES, data.id), newData).then(onClose)
 		} else {
-			addDoc(collection(firestore, Colllections.MODALITIES), newData).then(onClose)
+			addDoc(collection(firestore, Collections.MODALITIES), newData).then(onClose)
 		}
 	}, [ data, description, limit, parity, onClose ])
 
@@ -148,14 +150,12 @@ function FormDialog({ open, onClose, title, data = {} }) {
 					multiline
 					value={description}
 					onChange={putEventTargetValue(setDescription)}
-					label='Descrição'
-				/>
+					label='Descrição'/>
 				<TextField
 					value={limit}
 					onChange={putEventTargetValue(setLimit, Number)}
 					type='number'
-					label='Limite'
-				/>
+					label='Limite'/>
 				<TextField
 					value={parity}
 					onChange={putEventTargetValue(setParity, Number)}

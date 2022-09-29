@@ -9,7 +9,6 @@
 .aside-left {
 	grid-area: asideLeft;
 	background-color: #1d2229 !important;
-	padding: 10px;
 	overflow: auto;
 }
 
@@ -20,4 +19,30 @@
 	grid-area: main;
 	background-color: var(--bg-primary);
 	overflow: auto;
+	padding: 20px;
+}
+
+.menu {
+	display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 70px;
+    padding: 20px;
+}
+
+.menu-item{
+    display: flex;
+    align-items: center;
+    color: #cdcdcd;
+    text-decoration: none;
+    gap: 15px;
+    border-radius: 7px;
+	padding: 10px 0;
+}
+
+.btn-logout{
+	background: none;
+	border: none; 
+	font-size: 16px;
+	cursor: pointer;
 }
