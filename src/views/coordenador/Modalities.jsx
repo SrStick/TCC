@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
-import { Collections } from "../../helper/firebase"
+import { Collections, extractData } from "../../helper/firebase"
 import { Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField } from "@mui/material"
 import { Box } from "@mui/material"
 
@@ -30,33 +30,8 @@ function Modality() {
 		const modalities = collection(getFirestore(), Collections.MODALITIES)
 		const q = query(modalities, limit(20))
 
-		if(process.env.NODE_ENV === 'development') setModalities([])
-
-		return onSnapshot(q, snap => {
-			for (const { type, doc, oldIndex } of snap.docChanges()) {
-				const newData = { id: doc.id, ...doc.data() }
-
-				switch (type) {
-					case 'added':
-						setModalities(oldValue => [ ...oldValue, newData ])
-					break;
-
-					case 'modified':
-						setModalities(oldValue => {
-							const copy = [ ...oldValue ]
-							copy[oldIndex] = newData
-							return copy
-						})
-					break
-					
-					case 'removed':
-						setModalities(oldValue => {
-							const copy = [ ...oldValue ]
-							copy.splice(oldIndex, 1)
-							return copy
-						})
-				}
-			}
+		return onSnapshot(q, ({ docs }) => {
+			setModalities(docs.map(extractData))
 		})
 	}, [])
 
@@ -119,6 +94,10 @@ function FormDialog({ open, onClose, title, data }) {
 			setDescription(data.description)
 			setLimit(data.limit)
 			setParity(data.parity)
+		} else {
+			setDescription('')
+			setLimit(0)
+			setParity(0)
 		}
 	}, [data])
 

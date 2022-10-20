@@ -1,7 +1,7 @@
 import ArticleIcon from '@mui/icons-material/Article';
 import { Typography } from '@mui/material';
 
-function FileView({ type, url, alt }) {
+function FileView({ file }) {
 	const imgStyle = {
 		padding: '4px',
 		border: '1px solid #dee2e6',
@@ -9,11 +9,11 @@ function FileView({ type, url, alt }) {
 		cursor: 'pointer'
 	};
 
-	if (/image\/.{3,}/.test(type)) {
+	if (/image\/.{3,}/.test(file.type)) {
 		return (
 			<img
-				src={url}
-				alt={alt}
+				src={file.url}
+				alt={file.alt}
 				style={imgStyle}
 				width='210'
 				onClick={({ target: { src } }) => window.open(src, '_blank')} />
@@ -21,7 +21,7 @@ function FileView({ type, url, alt }) {
 	} else {
 		return (
 			<a 
-				href={url}
+				href={file.url}
 				target='blank'
 				className='flex-col-center'
 				style={{
@@ -29,7 +29,7 @@ function FileView({ type, url, alt }) {
 				}}
 			>
 				<ArticleIcon />
-				<Typography>teste</Typography>
+				<Typography>{file.originalName}</Typography>
 			</a>
 		);
 	}

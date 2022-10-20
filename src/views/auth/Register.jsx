@@ -1,4 +1,4 @@
-import { Button, FormControl, FormHelperText, InputAdornment, InputLabel, Link, OutlinedInput, TextField, Typography } from "@mui/material";
+import { Button, InputAdornment, Link, TextField, Typography } from "@mui/material";
 import {
 	createUserWithEmailAndPassword as createUser,
 	getAuth,
@@ -33,6 +33,8 @@ export default function Register() {
 	const singUp = () => {
 		const filledEmail = email + '@gsuite.iff.edu.br'
 
+		user.unsubscribe()
+
 		async function trySingUp() {
 
 			const emptyMessage = 'preencha este campo'
@@ -62,7 +64,6 @@ export default function Register() {
 				await setDoc(doc(getFirestore(), Collections.USERS, user.uid), {
 					name,
 					registry,
-					amountOfHors: 0,
 					type: 'common'
 				})
 			} catch (error) {
@@ -81,7 +82,9 @@ export default function Register() {
 		}
 
 		trySingUp()
-		.then(() => user.fetchData(() => navigate('/')))
+		.then(() => {
+			user.subscribe(() => navigate('/'))
+		})
 		.catch(error => {
 			const { field, message } = error
 			setError({ [field]: message })
@@ -90,49 +93,39 @@ export default function Register() {
 		})
 	}
 
-	const containerStyle = { mb: '10px', width: '100%' }
-	const inputProps = { style: { backgroundColor: '#fff' } }
-
 	return (
 		<AuthLayout>
 			<TextField
-				sx={containerStyle}
-				inputProps={inputProps}
 				label='Nome completo'
 				onBlur={putEventTargetValue(setName)}
-				error={error.name}
+				error={!!error.name}
 				helperText={error.name}
 			/>
 			<TextField
-				sx={containerStyle}
-				inputProps={inputProps}
 				label='Matrícula'
 				onBlur={putEventTargetValue(setRegistry)}
+				error={!!error.registry}
+				helperText={error.registry}
 			/>
-			<FormControl sx={containerStyle}>
-				<InputLabel>Email</InputLabel>
-				<OutlinedInput
-					sx={inputProps.style}
-					label='Email'
-					onBlur={putEventTargetValue(setEmail)}
-					error={!!error.email}
-					defaultValue={state?.placeholder}
-					endAdornment={
+			<TextField
+				label={'Email'}
+				InputProps={{
+					endAdornment: 
 						<InputAdornment position="end">@gsuite.iff.edu.br</InputAdornment>
-					}
-				/>
-				<FormHelperText error={!!error.email}>{error.email}</FormHelperText>
-			</FormControl>
+				}}
+				error={!!error.email}
+				helperText={error.email}
+				defaultValue={state?.placeholder}
+				onBlur={putEventTargetValue(setEmail)}
+			/>
 			<PasswordField
 				label='Senha'
-				containerSx={containerStyle}
-				error={!!error.pass}
+				error={error.pass}
+
 				onBlur={putEventTargetValue(setPassword)}
 				onChangeVisibility={setShowPassword}
 			/>
 			<TextField
-				sx={containerStyle}
-				inputProps={inputProps}
 				label='Confirmar senha'
 				type={showPassword ? 'text' : 'password'}
 				error={!!error.password}

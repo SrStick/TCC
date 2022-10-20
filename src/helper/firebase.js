@@ -1,17 +1,17 @@
 import { getAuth } from "firebase/auth"
 import * as Firestore from "firebase/firestore"
-import { createContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
 
 export const Collections = {
 	USERS: 'users',
 	TASKS: 'tasks',
-	MODALITIES: 'modalities'
+	MODALITIES: 'modalities',
 }
 
 export const Status = {
 	EM_ANALISE: 'Em Análize',
 	NEGADO: 'Negodo',
-	Computado: 'Computado'
+	COMPUTADO: 'Computado'
 }
 
 export function getUserInfo() {
@@ -25,19 +25,28 @@ export function getUserID() {
 
 export const UserContext = createContext()
 
+export function useUser() {
+	return useContext(UserContext)
+}
+
+export function extractData(doc) {
+	return { id: doc.id, ...doc.data() }
+}
+
 export function useTaskQuery(options) {
 	const [ tasks, setTasks ] = useState([])
+	const [ page, setPage ] = useState(0)
+	const optionsRef = useRef(options)
+
+	// const navigate = delta => setPage(n => n + delta)
 
 	useEffect(() => {
-		const { collection, getFirestore, query, limit, orderBy, onSnapshot, getDoc } = Firestore
+		const { collection, getFirestore, query, limit, startAt, orderBy, onSnapshot } = Firestore
 		const tasksCollection = collection(getFirestore(), Collections.TASKS)
-		const finalConstraints = [ limit(20), orderBy('date') ]
+		const finalConstraints = [ orderBy('date'), limit(20), startAt(page) ]
+		
+		const options = optionsRef.current
 		const userConstraints = options?.constraints ?? []
-
-		if (process.env.NODE_ENV === 'development') {
-			setTasks([])
-			console.log('clear tasks');
-		}
 
 			for (const constraint of userConstraints) {
 				finalConstraints.push(constraint)
@@ -46,36 +55,35 @@ export function useTaskQuery(options) {
 		const q = query(tasksCollection, ...finalConstraints)
 		
 		console.log('task_query_effect')
-		return onSnapshot(q, async snap => {
+		return onSnapshot(q, snap => {
 			const { foreach, bindModality } = options || {}
+			const { docs } = snap
+			const tasks = docs.map(TaskFactory)
 
-			for (const { doc, type, oldIndex } of snap.docChanges()) {
-				const newData = { id: doc.id, ...doc.data() }
+			if(bindModality) 
+				tasks.forEach(bindModalityTo)
+			
+			if (foreach)
+				tasks.forEach(foreach)
 
-				const formatedDate = newData.date.toDate().toLocaleDateString()
-				newData.date = formatedDate
-
-				if(bindModality) {
-					const modalityRef = Firestore.doc(getFirestore(), Collections.MODALITIES, newData.modality)
-					const modalityData = await getDoc(modalityRef).then(snap => snap.data())
-					newData.modality = modalityData
-				}
-
-				if(foreach) foreach(newData)
-				
-				setTasks(oldData => {
-					const copy = [ ...oldData ]
-					if (type === 'added')
-						copy.push(newData)
-					else if (type === 'removed')
-						copy.splice(oldIndex, 1)
-					else if(type === 'modified')
-						copy[oldIndex] = newData
-					return copy
-				})
-			}
+			setTasks(tasks)
 		})
-	}, [ options ])
+	}, [ page ])
 
 	return tasks
+}
+
+export async function bindModalityTo(task) {
+	const { getFirestore, getDoc, doc } = Firestore
+	const modalityRef = doc(getFirestore(), Collections.MODALITIES, task.modality)
+	const modalityData = await getDoc(modalityRef).then(snap => snap.data())
+	task.modality = { id: modalityRef.id, ...modalityData }
+}
+
+function TaskFactory(doc) {
+	const task = extractData(doc)
+	const formatedDate = task.date.toDate().toLocaleDateString()
+	task.date = formatedDate
+
+	return task
 }

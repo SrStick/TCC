@@ -13,6 +13,7 @@ const SlideTransition = forwardRef((props, ref) => (
 ))
 
 function InfoDialog({ open, onClose, task }) {
+
 	const { modality, files } = task ?? {}
 	return (
 		<Dialog open={open} onClose={onClose} TransitionComponent={SlideTransition} keepMounted>
@@ -41,9 +42,7 @@ function InfoDialog({ open, onClose, task }) {
 							{files.map(file =>
 								<FileView
 									key={file.name}
-									alt={file.name}
-									type={file.type}
-									url={file.url}
+									file={file}
 								/>
 							)}
 						</Box>

@@ -26,7 +26,7 @@ function SendActivity() {
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		const modalitiesCollection = collection(getFirestore(), 'modalities')
+		const modalitiesCollection = collection(getFirestore(), Collections.MODALITIES)
 		getDocs(modalitiesCollection).then(({ docs }) => {
 			const docsView = docs.map(doc => ({ id: doc.id, description: doc.get('description') }))
 			setModalities(docsView)
@@ -43,10 +43,10 @@ function SendActivity() {
 
 	const onDescriptionChange = useCallback(({ target: { value: text } }) => {
 		const progress = percentCalc(text.length, DESCRIPTION_LIMIT)
-		if(progress <= 100) {
+		if(progress <= 100 || text.length < description.length) {
 			setDescription(text)
 		}
-	}, [])
+	}, [ description ])
 
 	const onPasteDescription = ev => {
 		ev.preventDefault()
@@ -74,13 +74,10 @@ function SendActivity() {
 	useEffect(() => {
 		if (filesInfo.length === files.length && files.length !== 0) {
 			const toURL = file => file.url
-			const putTypeAndName = (url, i) => ({
-				url,
-				type: filesInfo[i].type,
-				name: filesInfo[i].name,
-			})
+			const mergeInfo = (url, i) => ({ ...filesInfo[i], url })
+
 			Promise.all(filesInfo.map(toURL))
-			.then(urls => urls.map(putTypeAndName))
+			.then(urls => urls.map(mergeInfo))
 			.then(onFinishUpload)
 		}
 	}, [ filesInfo, files, onFinishUpload ])

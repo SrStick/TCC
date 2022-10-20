@@ -9,6 +9,10 @@ function AuthLayout({ children }) {
 			sx={{
 				height: '100vh',
 				flexDirection: 'row',
+				'.MuiFormControl-root': { width: '85%' },
+				'.MuiInputBase-root': {
+					bgcolor: theme.palette.mode === 'light' ? '#fff' : '#464649'
+				},
 				[theme.breakpoints.down('md')]: {
 					marginTop: '40px',
 					flexDirection: 'column'

@@ -13,5 +13,9 @@
 
 body {
 	background-color: #f2f2f2;
-	margin: 0;
+}
+
+a.active {
+	background-color: rgb(35,112,45);
+	font-weight: bold;
 }

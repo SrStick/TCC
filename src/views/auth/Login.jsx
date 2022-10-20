@@ -64,7 +64,6 @@ export default function Login() {
 	return (
 		<AuthLayout>
 			<TextField
-				sx={{ bgcolor: '#fff', width: '85%' }}
 				label="Email"
 				onChange={putEventTargetValue(setEmail)}
 				onBlur={getPlaceholder}
@@ -73,7 +72,6 @@ export default function Login() {
 			<PasswordField
 				onChange={putEventTargetValue(setPassword)}
 				label='Senha'
-				containerSx={{ width: '85%' }}
 			/>
 			<Button
 				onClick={singIn}

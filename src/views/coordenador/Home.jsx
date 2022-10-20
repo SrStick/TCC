@@ -1,6 +1,6 @@
 import { InfoDialog } from '../../components'
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, Slide, TextField, Tooltip, Typography, Box } from "@mui/material"
-import { useState, useCallback, forwardRef, useEffect } from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slide, TextField, Tooltip, Typography, Skeleton } from "@mui/material"
+import { useState, useCallback, forwardRef, useContext } from "react";
 
 import InfoIcon from '@mui/icons-material/InfoOutlined';
 import FactCheckIcon from '@mui/icons-material/FactCheckOutlined';
@@ -18,64 +18,67 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
 /* FIREBASE */
-import * as Firestore from "firebase/firestore"
-
+import { Collections, useTaskQuery, UserContext, getUserID, Status } from '../../helper/firebase';
+import { doc, getFirestore, Timestamp, updateDoc } from 'firebase/firestore';
 
 const SlideTransition = forwardRef((props, ref) => 
 	<Slide direction="up" ref={ref} {...props} />
 )
 
+const ShadowRows = () => {
+	const rows = []
+	const lines = 4
+
+	for (let l = 0; l < lines; l++) {
+		const cels = []
+		for (let c = 0; c < 4; c++)
+			cels.push(
+				<TableCell key={c}>
+					<Skeleton />
+				</TableCell>
+			)
+		rows.push(<TableRow key={l} children={cels}/>)
+	}
+	return rows
+}
 
 function AdminHome() {
+	const tasks = useTaskQuery({ bindModality: true })
 
-	const [tasks, setTasks] = useState([])
+	const user = useContext(UserContext)
+
 	const [ clickedIndex, setClickedIndex ] = useState(null)
 	const [ infoIsOpen, setInfoIsOpen ] = useState(false)
 	const [ openStatusChange, setOpenStatusChange ] = useState(false)
 	const [ rejectCurrentTask, setRejectCurrentTask ] = useState(false)
-
-	useEffect(() => {
-		loadTasks()
-    }, []);
-
-	const loadTasks = async () => {
-		const { collection, getFirestore, query, limit, orderBy, onSnapshot, getDoc } = Firestore
-		const tasksCollection = collection(getFirestore(), 'tasks')
-		const finalConstraints = [ limit(20), orderBy('date') ]
-
-		const q = query(tasksCollection, ...finalConstraints)
-		
-		return onSnapshot(q, async snap => {
-
-			let array = []
-			for (const { doc} of snap.docChanges()) {
-				const newData = { id: doc.id, ...doc.data() }
-
-				const formatedDate = newData.date.toDate().toLocaleDateString()
-				newData.date = formatedDate
-
-				const modalityRef = Firestore.doc(getFirestore(), 'modalities', newData.modality)
-				const modalityData = await getDoc(modalityRef).then(snap => snap.data())
-				newData.modality = modalityData
-				
-				array.push(newData)
-			}
-			
-			setTasks(array)
-		})
-	}
 
 	const closeStatusChangeDialog = useCallback(() => {
 		setRejectCurrentTask(false)
 		setOpenStatusChange(false)
 	}, [])
 
-	return (
-		<>	
-			<Box style={{marginBottom: 15}}>
-				<Typography variant='h3' fontSize='2rem'>Atividades</Typography>
-			</Box>
+	const toInfoRow = useCallback((task, index) => (
+		<TableRow key={task.id}>
+			<TableCell>{task.description}</TableCell>
+			<TableCell>{task.date}</TableCell>
+			<TableCell>{task.author.name}</TableCell>
+			<TableCell align="center" onClickCapture={() => setClickedIndex(index)}>
+				<Tooltip title="Mais informações">
+					<IconButton color='info' onClickCapture={() => setInfoIsOpen(true)}>
+						<InfoIcon />
+					</IconButton>
+				</Tooltip>
+				<Tooltip title="Avaliar">
+					<IconButton onClick={() => setOpenStatusChange(true)}>
+						<FactCheckIcon />
+					</IconButton>
+				</Tooltip>
+			</TableCell>
+		</TableRow> 
+	), [])
 
+	return (
+		<>
 			<TableContainer component={Paper}>
 				<Table>
 					<TableHead>
@@ -87,25 +90,7 @@ function AdminHome() {
 					</TableRow>
 					</TableHead>
 					<TableBody>
-						{tasks.map((task, index) => (
-							<TableRow key={task.id}>
-								<TableCell component="th" scope="row">{task.description}</TableCell>
-								<TableCell>{task.date}</TableCell>
-								<TableCell>{task.author.name}</TableCell>
-								<TableCell align="center" onClickCapture={() => setClickedIndex(index)}>
-									<Tooltip title="Mais informações">
-										<IconButton color='info' onClickCapture={() => setInfoIsOpen(true)}>
-											<InfoIcon />
-										</IconButton>
-									</Tooltip>
-									<Tooltip title="Avaliar">
-										<IconButton onClick={() => setOpenStatusChange(true)}>
-											<FactCheckIcon />
-										</IconButton>
-									</Tooltip>
-								</TableCell>
-					  		</TableRow> 
-						))}
+						{tasks.length ? tasks.map(toInfoRow) : <ShadowRows/>}
 					</TableBody>
 				</Table>
 			</TableContainer>
@@ -120,19 +105,14 @@ function AdminHome() {
 					{ !rejectCurrentTask ?
 						<>
 							<Typography>
-								O aluno {tasks[clickedIndex]?.author.name} reinvindica receber {' '}
-								<Typography component='span' fontWeight='bold'>? horas</Typography>.
-							</Typography>
-							<Divider/>
-							<Typography>
-								Para confirar digite o número de horas requeridas no campo a baixo ou inseira outro
+								Para confirmar digite o número de horas requeridas no campo a baixo ou insira outro
 								valor que ele receberá por essa atividade.
 							</Typography>
 							<TextField placeholder="12" />
 						</>
 						:
 						<>
-							<Typography>Dexe algum comentário para, por exemplo, explicar o motivo.</Typography>
+							<Typography>Deixe algum comentário para, por exemplo, explicar o motivo.</Typography>
 							<TextField multiline minRows={3} />
 						</>
 					}
@@ -162,6 +142,19 @@ function AdminHome() {
 						<Button
 							startIcon={ <CheckIcon/> }
 							variant="outlined"
+							onClick={() => {
+								const currentTask = tasks[clickedIndex]
+								const taskPath = doc(getFirestore(), Collections.TASKS, currentTask.id)
+								
+								updateDoc(taskPath, {
+									status: Status.COMPUTADO,
+									reply: {
+										author: { name: user.info.name, uid: getUserID() },
+										date: Timestamp.now()
+									}
+								})
+								setOpenStatusChange(false)
+							}}
 						>Confirmar</Button>
 					}
 				</DialogActions>

@@ -1,20 +1,19 @@
 import FilePresentOutlinedIcon from "@mui/icons-material/FilePresentOutlined"
 import { IconButton, ListItem, ListItemText, Typography } from "@mui/material"
-import { Fragment } from "react"
 
 function TaskView({ task, onFileClick }) {
 	return (
 		<ListItem
-			secondaryAction={(
+			secondaryAction={
 				<IconButton onClick={onFileClick} edge="end">
 					<FilePresentOutlinedIcon />
 				</IconButton>
-			)}
+			}
 		>
 			<ListItemText
-				primary="lorem ashjdf sdfsdf fddfdf"
+				primary={task.description}
 				secondary={
-					<Fragment>
+					<>
 						<Typography
 							sx={{ display: 'inline' }}
 							component="span"
@@ -23,8 +22,8 @@ function TaskView({ task, onFileClick }) {
 						>
 							{task.status}
 						</Typography>
-						{' - ' + task.date}
-					</Fragment>
+						{' - '}<time>{task.date}</time>
+					</>
 				}
 			/>
 		</ListItem>

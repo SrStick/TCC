@@ -20,6 +20,7 @@ export function useTrackUploadProgress() {
 			complete() {
 				const newData = {
 					name: fileRef.name,
+					originalName: currentFile.name,
 					type: currentFile.type,
 					url: getDownloadURL(fileRef)
 				}

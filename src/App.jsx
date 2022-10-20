@@ -12,29 +12,35 @@ import { MainLayout } from './components';
 import { useMemo } from 'react';
 
 /* HOME */
-import CoordenadorHome from "./views/coordenador//Home"
+import CoordenadorHome from "./views/coordenador/Home"
 import StudentHome from "./views/aluno/Home"
 
 const SendActivity = lazy(() => import('./views/aluno/SendActivity'))
-const Modality = lazy(() => import('./views/coordenador//Modalities'))
+const Modality = lazy(() => import('./views/coordenador/Modalities'))
 
 const UserProvider = UserContext.Provider
-
 
 function App() {
 	const [loading, setLoading] = useState(true)
 	const [logged, setLogged] = useState(false)
 
-		const userData = useMemo(() => {
-			return {
+	const userData = useMemo(() => {
+		return {
 				async fetchData(beforeLoading) {
-					setLoading(true)
-					const data = await getUserInfo()
-					this.info = data
-					this.isAdmin = data.type !== 'common'
-					setLogged(true)
+				setLoading(true)
+				const data = await getUserInfo()
+				this.info = data
+				this.isAdmin = data.type !== 'common'
+				setLogged(true)
 					if(beforeLoading) beforeLoading()
-					setLoading(false)
+				setLoading(false)
+			},
+			subscribe(fun) {
+				this.unsubscribe = onAuthStateChanged(getAuth(), user => {
+					if(user) userData.fetchData(fun)
+					else setLoading(false)
+				})
+				return this.unsubscribe
 			},
 			singOut() {
 				setLogged(false)
@@ -43,36 +49,7 @@ function App() {
 		}
 	}, [])
 
-	useEffect(() => {
-		const unsub = onAuthStateChanged(getAuth(), user => {
-			if(user) 
-				userData.fetchData()
-			else
-				setLoading(false)
-			unsub()
-		})
-	}, [userData])
-
-	const coordenadorRoutes = () =>  (
-		<>
-			<Route path='/' element={<MainLayout/>} />
-			<Route path='modalities' element={<Modality />} />
-			<Route index element={<CoordenadorHome/>} />
-			<Route path='*' element={<Error404/>} />
-		</>
-	)
-	
-
-	const alunoRoutes = () => (
-		<>
-			<Route path='/' element={<MainLayout/>} />
-			<Route path='send-activity' element={<SendActivity />} />
-			<Route index element={<CoordenadorHome/>} />
-			<Route path='*' element={<Error404/>} />
-		</>
-	)
-	
-
+	useEffect(() => userData.subscribe(), [ userData ])
 
 	if (loading)
 		return <Loading />
@@ -105,7 +82,7 @@ function App() {
 									<Route path='modalities' element={<Modality />} />
 								</>
 							)}
-							<Route index element={userData.isAdmin? <CoordenadorHome/> : <StudentHome/>}/>
+							<Route index element={userData.isAdmin ? <CoordenadorHome/> : <StudentHome/>}/>
 						</Route>
 						<Route path='*' element={<Error404/>}/>
 					</Routes>
@@ -126,12 +103,12 @@ const Loading = () => (
 
 const theme = createTheme({
 	palette: {
-		type: 'light',
+		mode: 'light',
 		primary: {
 			main: '#32a041',
 		},
 		secondary: {
-			main: '#c8191e',
+			main: '#233D4D',
 		},
 		error: {
 			main: '#dc3545',
