@@ -6,7 +6,7 @@ import FileView from "./FileView"
 import { Box, Divider, Slide, Typography } from "@mui/material"
 import { forwardRef } from "react"
 
-const isValidModality = modality => typeof modality === 'object'
+const isObject = modality => typeof modality === 'object'
 
 const SlideTransition = forwardRef((props, ref) => (
 	<Slide direction="up" ref={ref} {...props} />
@@ -19,7 +19,7 @@ function InfoDialog({ open, onClose, task }) {
 		<Dialog open={open} onClose={onClose} TransitionComponent={SlideTransition} keepMounted>
 			<DialogTitle>Informações</DialogTitle>
 			<DialogContent>
-				{ isValidModality(modality) && (
+				{ isObject(modality) && (
 					<Box mb={'20px'}>
 						<Divider sx={{ mb: 1 }}>
 							<Typography component='h3' variant="h6">Modalidade</Typography>

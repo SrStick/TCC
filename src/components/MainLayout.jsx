@@ -1,66 +1,37 @@
 import {
-	Button,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogContentText,
-	DialogTitle,
-	Box,
-	AppBar,
-	Toolbar,
-	IconButton,
-	Typography,
-	Stack,
-	Link as MuiLink,
-} from '@mui/material'
-import { useCallback, useMemo, useState, useContext } from 'react'
+	AppBar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Link as MuiLink, Stack, TextField, Toolbar
+} from '@mui/material';
+import { useCallback, useState } from 'react';
 
-import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
+import HomeIcon from '@mui/icons-material/Home';
 
-import Menu from './Menu'
 import MenuIcon from '@mui/icons-material/Menu';
-import { UserContext } from '../helper/firebase'
-import { NavLink as RouterNavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink as RouterNavLink, Outlet } from 'react-router-dom';
+import { promoteUser, useUser } from '../helper/firebase';
+import { putEventTargetValue } from '../helper/short-functions';
+import Menu from './Menu';
+import { DialogContext } from '../helper/dialog-state-holders';
 
-// const items = [
-// 	{
-// 		text: 'Usuários',
-// 		to: '/',
-// 		icon: <PeopleAltOutlinedIcon />
-// 	},
-// 	{
-// 		text: 'Atividades',
-// 		to: '/',
-// 		icon: <ListIcon />
-// 	},
-// 	{
-// 		text: 'Modalidades',
-// 		to: '/modalities',
-// 		icon: <ListAltIcon />
-// 	},
-// 	{
-// 		text: 'Regulamentos',
-// 		to: '/',
-// 		icon: <RuleIcon />
-// 	},
-// 	{
-// 		text: 'Sair',
-// 		icon: <LogoutIcon />,
-// 		action: singOut
-// 	}
-// ]
 
 function MainLayout() {
 
 	const [ menuIsOpen, setMenuIsOpen ] = useState(false)
 	const [ exitDialogIsOpen, setExitDialogIsOpen ] = useState(false)
-	const closeExitDialog = useCallback(() => setExitDialogIsOpen(false), [])
-	const closeMenu = useCallback(() => setMenuIsOpen(false), [])
+	const [ promoteDialogIsOpen, setPromoteDialogIsOpen ] = useState(false)
+	const [ toPromoteEmail, setToPromoteEmail ] = useState('')
 
-	const user = useContext(UserContext)
+	const showDialog = useCallback((name, visible = true) => {
+		let fn
+		switch (name) {
+			case 'exit': fn = setExitDialogIsOpen; break
+			case 'promote': fn = setPromoteDialogIsOpen; break
+			case 'menu': fn = setMenuIsOpen
+		}
+		return () => fn(visible)
+	}, [])
 
-	const singOut = useCallback(() => user.singOut(), [user])
+	const user = useUser()
 
 	return (
 		<Box>
@@ -72,7 +43,7 @@ function MainLayout() {
 						color="inherit"
 						aria-label="menu"
 						sx={{ mr: 2 }}
-						onClick={() => setMenuIsOpen(true)}
+						onClick={showDialog('menu')}
 					>
 						<MenuIcon />
 					</IconButton>
@@ -98,25 +69,33 @@ function MainLayout() {
 					</Stack>
 				</Toolbar>
 			</AppBar>
-			<Menu open={menuIsOpen} onClose={closeMenu} />
-			<Box sx={{ m: '20px' }}>
-				<Outlet />
-			</Box>
-			{/* <Dialog open={exitDialogIsOpen} onClose={closeExitDialog}>
-				<DialogTitle>Deseja realmente sair?</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						Sua conta será desconectada e você terá que fazer login novamente.
-					</DialogContentText>
-					<DialogActions>
-						<Button color="error" variant="outlined" onClick={singOut}>
-							Confirmar
-						</Button>
+			<DialogContext.Provider value={showDialog}>
+				<Menu open={menuIsOpen} onClose={showDialog('menu', false)} />
+				<Box sx={{ m: '20px' }}>
+					<Outlet />
+				</Box>
+			</DialogContext.Provider>
 
-						<Button onClick={closeExitDialog}>Voltar</Button>
-					</DialogActions>
+			<Dialog open={exitDialogIsOpen} onClose={showDialog('exit', false)}>
+				<DialogTitle>Atenção</DialogTitle>
+				<DialogContent>Deseja realmente sair</DialogContent>
+				<DialogActions>
+					<Button onClick={user.singOut}>Sim</Button>
+					<Button variant='outlined' color='error' onClick={showDialog('exit', false)}>Não</Button>
+				</DialogActions>
+			</Dialog>
+
+			<Dialog open={promoteDialogIsOpen} onClose={showDialog('promote', false)}>
+				<DialogTitle>Promoção</DialogTitle>
+				<DialogContent>
+					<DialogContentText>Digite o email do usuário que deseja que se torne um ?.</DialogContentText>
+					<TextField onBlur={putEventTargetValue(setToPromoteEmail)} fullWidth />
 				</DialogContent>
-			</Dialog> */}
+				<DialogActions>
+					<Button onClick={promoteUser.bind(null, toPromoteEmail)}>Confirmar</Button>
+					<Button onClick={showDialog('promote', false)}>Voltar</Button>
+				</DialogActions>
+			</Dialog>
 		</Box>
 	)
 }
@@ -129,7 +108,7 @@ const Link = props =>
 		color={'inherit'}
 		underline={'none'}
 		padding={'10px'}
-		borderRadius={'10%'}
+		borderRadius={'5%'}
 	/>
 
 export default MainLayout

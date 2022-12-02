@@ -1,4 +1,5 @@
 import {
+	CircularProgress,
 	List,
 	Stack,
 	Typography
@@ -21,21 +22,34 @@ function CommumUserHome() {
 
 	return (
 		<>
-			<IfBlock condition={!tasks.length}>
-				<Stack alignItems={'center'} justifyContent={'center'} bgcolor={'neutral.main'}>
-					<Typography color={'neutral.contrastText'} padding={2}>Comece adicionando uma atividade.</Typography>
+			<IfBlock condition={tasks === null || (tasks !== null && tasks.length === 0)}>
+				<Stack
+					alignItems={'center'}
+					justifyContent={'center'}
+					bgcolor={'neutral.main'}
+					color={'neutral.contrastText'}
+					borderRadius={1}
+				>
+					{ tasks !== null ?
+						<Typography color={'inherit'} padding={2}>
+							Começe adicionando uma atividade.
+						</Typography>
+					:
+						<CircularProgress color={'inherit'} sx={{ my: 2 }}/>
+					}
 				</Stack>
 			</IfBlock>
-
-			<List sx={{ maxWidth: 260 }}>
-				{tasks.map(task =>
-					<TaskView
-						key={task.id}
-						task={task}
-						onFileClick={() => setClickedTask(task)}
-					/>
-				)}
-			</List>
+			<Stack alignItems={'center'}>
+				<List sx={{ minWidth: 300 }}>
+					{tasks?.map(task =>
+						<TaskView
+							key={task.id}
+							task={task}
+							onFileClick={() => setClickedTask(task)}
+						/>
+					)}
+				</List>
+			</Stack>
 
 			<InfoDialog
 				open={!!clickedTask}

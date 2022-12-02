@@ -1,6 +1,6 @@
 import { CircularProgress, createTheme, Stack, ThemeProvider, Typography } from '@mui/material';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { useEffect, useState, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense, lazy, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom'
 
 import Login from './views/auth/Login';
@@ -9,11 +9,12 @@ import Error404 from './views/404'
 
 import { getUserInfo, UserContext } from './helper/firebase';
 import { MainLayout } from './components';
-import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom'
 
 /* HOME */
 import CoordenadorHome from "./views/coordenador/Home"
 import StudentHome from "./views/aluno/Home"
+import { useCallback } from 'react';
 
 const SendActivity = lazy(() => import('./views/aluno/SendActivity'))
 const Modality = lazy(() => import('./views/coordenador/Modalities'))
@@ -21,43 +22,57 @@ const Modality = lazy(() => import('./views/coordenador/Modalities'))
 const UserProvider = UserContext.Provider
 
 function App() {
-	const [loading, setLoading] = useState(true)
-	const [logged, setLogged] = useState(false)
+	const [ loading, setLoading ] = useState(true)
+	const [ logged, setLogged ] = useState(false)
+	const [ noUserData, setNoUserData ] = useState(false)
 
-	const userData = useMemo(() => {
-		return {
-				async fetchData(beforeLoading) {
-				setLoading(true)
-				const data = await getUserInfo()
-				this.info = data
-				this.isAdmin = data.type !== 'common'
-				setLogged(true)
-					if(beforeLoading) beforeLoading()
-				setLoading(false)
-			},
-			subscribe(fun) {
-				this.unsubscribe = onAuthStateChanged(getAuth(), user => {
-					if(user) userData.fetchData(fun)
-					else setLoading(false)
-				})
-				return this.unsubscribe
-			},
-			singOut() {
-				setLogged(false)
-				getAuth().signOut()
-			}
-		}
+	const navigate = useNavigate()
+
+	const inLoadSrean = useCallback(todoFunction => {
+		setLoading(true)
+		todoFunction().then(() => setLoading(false))
 	}, [])
 
-	useEffect(() => userData.subscribe(), [ userData ])
+	const userRef = useRef({
+		fetchData(beforeLoading) {
+			inLoadSrean(async () => {
+				const data = await getUserInfo()
+				if(!data) setNoUserData(true)
+				else {
+					this.info = data
+					this.isAdmin = data.type !== 'common'
+					setLogged(true)
+				}
+				if (beforeLoading) beforeLoading()
+			})
+		},
+		subscribe(fun) {
+			this.unsubscribe = onAuthStateChanged(getAuth(), user => {
+				if (user) this.fetchData(fun)
+				else setLoading(false)
+			})
+			return this.unsubscribe
+		},
+		singOut() {
+			inLoadSrean(async () => {
+				setLogged(false)
+				navigate('/')
+				await getAuth().signOut()
+			})
+		}
+	})
 
+	useEffect(() => userRef.current.subscribe(), [])
+
+	
 	if (loading)
 		return <Loading />
-
-	else if (!logged)
+	else if (noUserData) {
+		// renderizar algo como sua conta foi desativada
+	} else if (!logged)
 		return (
 			<ThemeProvider theme={theme}>
-				<UserProvider value={userData}>
+				<UserProvider value={userRef.current}>
 					<Routes>
 						<Route path='/' element={<Login/>} />
 						<Route path='/singin' element={<Register/>} />
@@ -69,11 +84,11 @@ function App() {
 
 	return (
 		<ThemeProvider theme={theme}>
-			<UserProvider value={userData}>
+			<UserProvider value={userRef.current}>
 				<Suspense fallback={<Loading/>}>
 					<Routes>
 						<Route path='/' element={<MainLayout/>}>
-							{!userData.isAdmin ? (
+							{!userRef.current.isAdmin ? (
 								<>
 									<Route path='send-activity' element={<SendActivity />} />
 								</>
@@ -82,7 +97,7 @@ function App() {
 									<Route path='modalities' element={<Modality />} />
 								</>
 							)}
-							<Route index element={userData.isAdmin ? <CoordenadorHome/> : <StudentHome/>}/>
+							<Route index element={userRef.current.isAdmin ? <CoordenadorHome/> : <StudentHome/>}/>
 						</Route>
 						<Route path='*' element={<Error404/>}/>
 					</Routes>

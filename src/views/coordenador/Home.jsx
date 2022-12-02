@@ -1,6 +1,6 @@
 import { InfoDialog } from '../../components'
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slide, TextField, Tooltip, Typography, Skeleton } from "@mui/material"
-import { useState, useCallback, forwardRef, useContext } from "react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slide, TextField, Tooltip, Typography, Skeleton, InputAdornment } from "@mui/material"
+import { useState, useCallback, forwardRef } from "react";
 
 import InfoIcon from '@mui/icons-material/InfoOutlined';
 import FactCheckIcon from '@mui/icons-material/FactCheckOutlined';
@@ -18,8 +18,9 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
 /* FIREBASE */
-import { Collections, useTaskQuery, UserContext, getUserID, Status } from '../../helper/firebase';
+import { Collections, useTaskQuery, getUserID, Status, useUser } from '../../helper/firebase';
 import { doc, getFirestore, Timestamp, updateDoc } from 'firebase/firestore';
+import { PatternFunctions, useTextPatterns } from '../../helper/hooks';
 
 const SlideTransition = forwardRef((props, ref) => 
 	<Slide direction="up" ref={ref} {...props} />
@@ -43,14 +44,31 @@ const ShadowRows = () => {
 }
 
 function AdminHome() {
-	const tasks = useTaskQuery({ bindModality: true })
-
-	const user = useContext(UserContext)
-
 	const [ clickedIndex, setClickedIndex ] = useState(null)
 	const [ infoIsOpen, setInfoIsOpen ] = useState(false)
 	const [ openStatusChange, setOpenStatusChange ] = useState(false)
 	const [ rejectCurrentTask, setRejectCurrentTask ] = useState(false)
+	
+	const tasks = useTaskQuery()
+	const user = useUser()
+
+	const replyHours = useTextPatterns(PatternFunctions.onlyNumbers)
+
+	const sendReply = useCallback((id, ok = true, comments) => {
+		const reply = {
+			author: { name: user.info.name, uid: getUserID() },
+			date: Timestamp.now(),
+			hours: parseInt(replyHours.value, 10)
+		}
+
+		if (comments)
+			reply.comments = comments
+
+		return updateDoc(doc(getFirestore(), Collections.TASKS, id), {
+			status: ok ? Status.COMPUTADO : Status.NEGADO,
+			reply
+		})
+	}, [ user.info.name, replyHours.value ])
 
 	const closeStatusChangeDialog = useCallback(() => {
 		setRejectCurrentTask(false)
@@ -84,13 +102,13 @@ function AdminHome() {
 					<TableHead>
 					<TableRow>
 						<TableCell>Descrição</TableCell>
-						<TableCell>Data</TableCell>
+						<TableCell>Data de Envio</TableCell>
 						<TableCell>Autor</TableCell>
 						<TableCell align="center">Ações</TableCell>
 					</TableRow>
 					</TableHead>
 					<TableBody>
-						{tasks.length ? tasks.map(toInfoRow) : <ShadowRows/>}
+						{tasks?.length ? tasks.map(toInfoRow) : <ShadowRows/>}
 					</TableBody>
 				</Table>
 			</TableContainer>
@@ -104,11 +122,15 @@ function AdminHome() {
 				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 					{ !rejectCurrentTask ?
 						<>
-							<Typography>
-								Para confirmar digite o número de horas requeridas no campo a baixo ou insira outro
-								valor que ele receberá por essa atividade.
-							</Typography>
-							<TextField placeholder="12" />
+							<Typography>Digite o valor que ele receberá por essa atividade.</Typography>
+							<TextField
+								InputProps={{
+									endAdornment:
+										<InputAdornment position="end">horas</InputAdornment>
+								}}
+								onChange={replyHours.onChange}
+								value={replyHours.value}
+							/>
 						</>
 						:
 						<>
@@ -144,16 +166,7 @@ function AdminHome() {
 							variant="outlined"
 							onClick={() => {
 								const currentTask = tasks[clickedIndex]
-								const taskPath = doc(getFirestore(), Collections.TASKS, currentTask.id)
-								
-								updateDoc(taskPath, {
-									status: Status.COMPUTADO,
-									reply: {
-										author: { name: user.info.name, uid: getUserID() },
-										date: Timestamp.now()
-									}
-								})
-								setOpenStatusChange(false)
+								sendReply(currentTask.id).then(() => setOpenStatusChange(false))
 							}}
 						>Confirmar</Button>
 					}
@@ -163,10 +176,12 @@ function AdminHome() {
 			<InfoDialog
 				open={infoIsOpen}
 				onClose={() => setInfoIsOpen(false)}
-				task={tasks[clickedIndex]}
+				task={tasks ? tasks[clickedIndex] : null}
 			/>
 		</>
 	)
 }
+
+
 
 export default AdminHome

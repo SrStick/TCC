@@ -9,15 +9,15 @@ import { useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordField } from "../../components";
 
-import { Collections, UserContext } from "../../helper/firebase";
+import { Collections, useUser } from "../../helper/firebase";
 import { putEventTargetValue } from '../../helper/short-functions';
 import ValidationError from "../../helper/ValidationError";
 import AuthLayout from "./AuthLayout";
-import { useContext } from "react";
+import { useTextPatterns, PatternFunctions } from "../../helper/hooks";
 
 export default function Register() {
 	const [ name, setName ] = useState('')
-	const [ registry, setRegistry ] = useState('')
+	const registry = useTextPatterns(PatternFunctions.onlyNumbers, PatternFunctions.limit(12))
 	const [ email, setEmail ] = useState('')
 	const [ password, setPassword ] = useState('')
 	const [ passwordConfirmation, setPasswordConfirmation ] = useState('')
@@ -28,7 +28,7 @@ export default function Register() {
 	const { state } = useLocation()
 	const navigate = useNavigate()
 
-	const user = useContext(UserContext)
+	const user = useUser()
 
 	const singUp = () => {
 		const filledEmail = email + '@gsuite.iff.edu.br'
@@ -41,7 +41,7 @@ export default function Register() {
 
 			const fieldsMap = new Map()
 				.set('name', name)
-				.set('registry', registry)
+				.set('registry', registry.value)
 				.set('email', email)
 				.set('password', password)
 			
@@ -59,11 +59,11 @@ export default function Register() {
 			} catch (error) {
 				throw new ValidationError('email já cadastrado', 'email', error.code)
 			}
-
 			try {
 				await setDoc(doc(getFirestore(), Collections.USERS, user.uid), {
 					name,
-					registry,
+					email,
+					registry: registry.value,
 					type: 'common'
 				})
 			} catch (error) {
@@ -103,12 +103,13 @@ export default function Register() {
 			/>
 			<TextField
 				label='Matrícula'
-				onBlur={putEventTargetValue(setRegistry)}
+				value={registry.value}
+				onChange={registry.onChange}
 				error={!!error.registry}
 				helperText={error.registry}
 			/>
 			<TextField
-				label={'Email'}
+				label='Email'
 				InputProps={{
 					endAdornment: 
 						<InputAdornment position="end">@gsuite.iff.edu.br</InputAdornment>
@@ -120,8 +121,7 @@ export default function Register() {
 			/>
 			<PasswordField
 				label='Senha'
-				error={error.pass}
-
+				error={!!error.password}
 				onBlur={putEventTargetValue(setPassword)}
 				onChangeVisibility={setShowPassword}
 			/>

@@ -8,28 +8,26 @@ import { useCallback, useEffect, useState } from "react";
 import { useTrackUploadProgress } from "../../helper/hooks";
 import { percentCalc, putEventTargetValue } from '../../helper/short-functions'
 import { addDoc, collection, getDocs, getFirestore, Timestamp } from "firebase/firestore";
-import { Collections, getUserID, Status, UserContext } from "../../helper/firebase";
-import { useContext } from "react";
+import { Collections, extractData, getUserID, Status, useUser } from "../../helper/firebase";
 import { useNavigate } from "react-router-dom";
 
 const DESCRIPTION_LIMIT = 300
 
 function SendActivity() {
 	const [ files, setFiles ] = useState([])
-	const [ modality, setModality ] = useState('')
+	const [ modalityId, setModalityId ] = useState()
 	const [ modalities, setModalities ] = useState([])
 	const [ description, setDescription ] = useState('')
 	const [ descriptionSizeProgress, setDescriptionSizeProgress ] = useState(0)
 	const [ uploadProgress, filesInfo, trackFiles ] = useTrackUploadProgress()
 
-	const user = useContext(UserContext)
+	const user = useUser()
 	const navigate = useNavigate()
 
 	useEffect(() => {
 		const modalitiesCollection = collection(getFirestore(), Collections.MODALITIES)
 		getDocs(modalitiesCollection).then(({ docs }) => {
-			const docsView = docs.map(doc => ({ id: doc.id, description: doc.get('description') }))
-			setModalities(docsView)
+			setModalities(docs.map(extractData))
 		})
 	}, [])
 
@@ -51,16 +49,15 @@ function SendActivity() {
 	const onPasteDescription = ev => {
 		ev.preventDefault()
 		const pastedContent = ev.clipboardData.getData('text/plain')
-		setDescription(oldDescription => {
-			const fullContent = oldDescription + pastedContent
-			return fullContent.substring(0, DESCRIPTION_LIMIT).trim()
-		})
+		setDescription(oldDescription => 
+			(oldDescription + pastedContent).substring(0, DESCRIPTION_LIMIT).trim()
+		)
 	}
 
 	const onFinishUpload = useCallback(files => {
 		addDoc(collection(getFirestore(), Collections.TASKS), {
 			description,
-			modality,
+			modality: modalities.find(mod => mod.id = modalityId),
 			status: Status.EM_ANALISE,
 			date: Timestamp.now(),
 			author: {
@@ -69,7 +66,7 @@ function SendActivity() {
 			},
 			files
 		}).then(() => navigate('/'))
-	}, [ description, modality, user, navigate ])
+	}, [ description, modalityId, modalities, user, navigate ])
 
 	useEffect(() => {
 		if (filesInfo.length === files.length && files.length !== 0) {
@@ -91,12 +88,12 @@ function SendActivity() {
 					<InputLabel>Modalidade</InputLabel>
 					<Select
 						label="Modalidade"
-						onChange={putEventTargetValue(setModality)}
-						value={modality}
+						onChange={putEventTargetValue(setModalityId)}
+						value={modalityId}
 					>
-						{modalities.map(({ description, id }) => (
+						{modalities.map(({ description, id }) =>
 							<MenuItem key={description} value={id}>{description}</MenuItem>
-						))}
+						)}
 					</Select>
 				</FormControl>
 				<Box sx={{ position: 'relative', pt: 3 }}>
