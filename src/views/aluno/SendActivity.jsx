@@ -39,12 +39,9 @@ function SendActivity() {
 				)
 
 				const withTotalDoc = await getDoc(userRef)
-				const modalityData = extractData(modality)
 				const isAllowed = withTotalDoc.get('total') < modality.get('limit')
-				if(withTotalDoc.exists() && isAllowed) {
-					allowedModalities.push(modalityData)
-				} else 
-					allowedModalities.push(modalityData)
+				if ((withTotalDoc.exists() && isAllowed) || !withTotalDoc.exists()) 
+					allowedModalities.push(extractData(modality))
 			}
 			console.timeEnd('filterMods')
 			setModalities(allowedModalities)
