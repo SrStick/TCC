@@ -1,13 +1,12 @@
 import { getAuth } from "firebase/auth"
 import * as Firestore from "firebase/firestore"
-import { getDownloadURL, getStorage, ref } from "firebase/storage"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 
 export const Collections = {
 	USERS: 'users',
 	TASKS: 'tasks',
 	MODALITIES: 'modalities',
-	PROMOTE_LIST: 'promote_list'
+	USERS_TIMES: 'users_time'
 }
 
 export const Status = {
@@ -90,9 +89,19 @@ export function useTaskQuery(options) {
 	return tasks
 }
 
+function formatDate(timestemp, showTime) {
+	const date = timestemp.toDate()
+	const [ dateString, time ] = date.toLocaleString().split(' ')
+	const [ hours, minutes ] = time.split(':')
+	return !showTime ? dateString : `${dateString} ${hours}:${minutes}` 
+}
+
 function TaskFactory(doc) {
+
 	const task = extractData(doc)
-	const formatedDate = task.date.toDate().toLocaleDateString()
-	task.date = formatedDate
+	task.date = formatDate(task.date)
+
+	if(task.reply) task.reply.date = formatDate(task.reply.date, true)
+
 	return task
 }
