@@ -7,7 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCallback, useEffect, useState } from "react";
 import { useTrackUploadProgress } from "../../helper/hooks";
 import { percentCalc, putEventTargetValue } from '../../helper/short-functions'
-import { addDoc, collection, getDocs, getFirestore, Timestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, Timestamp } from "firebase/firestore";
 import { Collections, extractData, getUserID, Status, useUser } from "../../helper/firebase";
 import { useNavigate } from "react-router-dom";
 
@@ -15,7 +15,7 @@ const DESCRIPTION_LIMIT = 300
 
 function SendActivity() {
 	const [ files, setFiles ] = useState([])
-	const [ modalityId, setModalityId ] = useState()
+	const [ modalityId, setModalityId ] = useState('default')
 	const [ modalities, setModalities ] = useState([])
 	const [ description, setDescription ] = useState('')
 	const [ descriptionSizeProgress, setDescriptionSizeProgress ] = useState(0)
@@ -26,8 +26,28 @@ function SendActivity() {
 
 	useEffect(() => {
 		const modalitiesCollection = collection(getFirestore(), Collections.MODALITIES)
-		getDocs(modalitiesCollection).then(({ docs }) => {
-			setModalities(docs.map(extractData))
+		console.time('filterMods')
+		getDocs(modalitiesCollection).then(async ({ docs }) => {
+			const allowedModalities = []
+			for (const modality of docs) {
+				const userRef = doc(
+					getFirestore(),
+					Collections.MODALITIES,
+					modality.id,
+					Collections.USERS_TIMES,
+					getUserID()
+				)
+
+				const withTotalDoc = await getDoc(userRef)
+				const modalityData = extractData(modality)
+				const isAllowed = withTotalDoc.get('total') < modality.get('limit')
+				if(withTotalDoc.exists() && isAllowed) {
+					allowedModalities.push(modalityData)
+				} else 
+					allowedModalities.push(modalityData)
+			}
+			console.timeEnd('filterMods')
+			setModalities(allowedModalities)
 		})
 	}, [])
 
@@ -57,7 +77,7 @@ function SendActivity() {
 	const onFinishUpload = useCallback(files => {
 		addDoc(collection(getFirestore(), Collections.TASKS), {
 			description,
-			modality: modalities.find(mod => mod.id = modalityId),
+			modality: modalities.filter(mod => mod.id = modalityId),
 			status: Status.EM_ANALISE,
 			date: Timestamp.now(),
 			author: {
@@ -83,7 +103,7 @@ function SendActivity() {
 
 	return (
 		<>
-			<Stack alignItems='center' spacing={5}>
+			<Stack alignItems='center' spacing={2}>
 				<FormControl sx={{ width: '400px' }}>
 					<InputLabel>Modalidade</InputLabel>
 					<Select
@@ -91,6 +111,7 @@ function SendActivity() {
 						onChange={putEventTargetValue(setModalityId)}
 						value={modalityId}
 					>
+						<MenuItem value='default'>Escolha uma modalidade</MenuItem>
 						{modalities.map(({ description, id }) =>
 							<MenuItem key={description} value={id}>{description}</MenuItem>
 						)}
