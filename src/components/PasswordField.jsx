@@ -1,16 +1,10 @@
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { IconButton, InputAdornment, TextField } from '@mui/material'
-import { useEffect, useState } from 'react'
-import { putToggle } from '../helper/short-functions'
+import { useState } from 'react'
 
 function PasswordField({ onChangeVisibility, ...props }) {
 
 	const [ showPassword, setShowPassword ] = useState(false)
-
-	useEffect(() => {
-		if (onChangeVisibility)
-			onChangeVisibility(showPassword)
-	}, [ showPassword, onChangeVisibility ])
 
 	return (
 			<TextField
@@ -21,8 +15,12 @@ function PasswordField({ onChangeVisibility, ...props }) {
 						<InputAdornment position="end">
 							<IconButton
 								aria-label="toggle password visibility"
-								onClick={putToggle(setShowPassword)}
 								edge="end"
+								onClick={() => {
+									setShowPassword(prevValue => !prevValue)
+									if (onChangeVisibility)
+										onChangeVisibility(showPassword)
+								}}
 							>
 								{showPassword ? <VisibilityOff /> : <Visibility />}
 							</IconButton>
