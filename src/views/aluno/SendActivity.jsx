@@ -34,10 +34,9 @@ function SendActivity() {
 					getFirestore(),
 					Collections.MODALITIES,
 					modality.id,
-					Collections.USERS_TIMES,
+					Collections.USER_TIMES,
 					getUserID()
 				)
-
 				const withTotalDoc = await getDoc(userRef)
 				const isAllowed = withTotalDoc.get('total') < modality.get('limit')
 				if ((withTotalDoc.exists() && isAllowed) || !withTotalDoc.exists()) 
@@ -74,7 +73,7 @@ function SendActivity() {
 	const onFinishUpload = useCallback(files => {
 		addDoc(collection(getFirestore(), Collections.TASKS), {
 			description,
-			modality: modalities.filter(mod => mod.id = modalityId),
+			modality: modalities.find(mod => mod.id === modalityId),
 			status: Status.EM_ANALISE,
 			date: Timestamp.now(),
 			author: {

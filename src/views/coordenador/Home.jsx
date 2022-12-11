@@ -19,7 +19,7 @@ import Paper from '@mui/material/Paper';
 
 /* FIREBASE */
 import { Collections, useTaskQuery, getUserID, Status, useUser } from '../../helper/firebase';
-import { doc, getFirestore, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, getFirestore, increment, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { PatternFunctions, useTextPatterns } from '../../helper/hooks';
 
 const SlideTransition = forwardRef((props, ref) => 
@@ -55,6 +55,11 @@ function AdminHome() {
 	const replyHours = useTextPatterns(PatternFunctions.onlyNumbers)
 
 	const sendReply = useCallback((id, ok = true, comments) => {
+		const firestore = getFirestore()
+		const currentTask = tasks[clickedIndex]
+		const modalityId = currentTask.modality.id
+		const status = ok ? Status.COMPUTADO : Status.NEGADO
+
 		const reply = {
 			author: { name: user.info.name, uid: getUserID() },
 			date: Timestamp.now(),
@@ -64,11 +69,21 @@ function AdminHome() {
 		if (comments)
 			reply.comments = comments
 
-		return updateDoc(doc(getFirestore(), Collections.TASKS, id), {
-			status: ok ? Status.COMPUTADO : Status.NEGADO,
-			reply
-		})
-	}, [ user.info.name, replyHours.value ])
+		const currentModalityUserTime = doc(
+			firestore,
+			Collections.MODALITIES,
+			modalityId,
+			Collections.USER_TIMES,
+			currentTask.author.uid
+		)
+
+		const asyncActions = [ updateDoc(doc(firestore, Collections.TASKS, id), { status, reply }) ]
+
+		if(status === Status.COMPUTADO)
+			asyncActions.push(setDoc(currentModalityUserTime, { total: increment(reply.hours) }))
+
+	return Promise.all(asyncActions) 
+	}, [ user.info.name, replyHours.value, tasks, clickedIndex ])
 
 	const closeStatusChangeDialog = useCallback(() => {
 		setRejectCurrentTask(false)

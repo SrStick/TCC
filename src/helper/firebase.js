@@ -6,7 +6,7 @@ export const Collections = {
 	USERS: 'users',
 	TASKS: 'tasks',
 	MODALITIES: 'modalities',
-	USERS_TIMES: 'users_time',
+	USER_TIMES: 'user_times',
 	PROMOTE_LIST: 'promote_list'
 }
 
@@ -115,23 +115,23 @@ export function useTimeGetter() {
 	const [ page, setPage ] = useState(0)
 
 	useEffect(() => {
-		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, startAt } = Firestore
+		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, startAt, orderBy } = Firestore
 		const modalitiesRef = collection(getFirestore(), Collections.MODALITIES)
-		const q = query(modalitiesRef, startAt(page), limit(15))
+		const q = query(modalitiesRef, orderBy('limit'), startAt(page), limit(15))
 
 		getDocs(q).then(async ({ docs }) => {
 			const returnedData = []
-			for (const { ref: { path: modPath }, data : getModData } of docs) {
-				const userTimeRef = doc(getFirestore(), modPath, getUserID())
-				const userTimeData = await getDoc(getFirestore(), userTimeRef)
+			for (const modMeta of docs) {
+				const userTimeRef = doc(getFirestore(), Collections.MODALITIES, modMeta.id, Collections.USER_TIMES, getUserID())
+				const userTimeData = await getDoc(userTimeRef)
 				if (userTimeData.exists()) {
-					const modData = getModData()
+					const modData = modMeta.data()
 					const userTime = userTimeData.get('total')
 
 					returnedData.push({
 						modality: modData,
 						userTime,
-						progress: modData.userTime / modData.limit * 100
+						progress: Math.floor(userTime / modData.limit * 100)
 					})
 				}
 			}
