@@ -1,12 +1,13 @@
 import { getAuth } from "firebase/auth"
 import * as Firestore from "firebase/firestore"
-import { createContext, useContext, useEffect, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 
 export const Collections = {
 	USERS: 'users',
 	TASKS: 'tasks',
 	MODALITIES: 'modalities',
-	USERS_TIMES: 'users_time'
+	USERS_TIMES: 'users_time',
+	PROMOTE_LIST: 'promote_list'
 }
 
 export const Status = {
@@ -45,7 +46,10 @@ export async function promoteUser(email) {
 export function addEmailToPromoteList(email) {
 	const { getFirestore, collection, addDoc, Timestamp } = Firestore
 	const promoteListRef = collection(getFirestore(), Collections.PROMOTE_LIST)
-	addDoc(promoteListRef, { email, date: Timestamp.now() })
+
+	const sevenDaysLater = new Date()
+	sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+	addDoc(promoteListRef, { email, validity: Timestamp.fromDate(sevenDaysLater) })
 }
 
 export const UserContext = createContext()
@@ -104,4 +108,38 @@ function TaskFactory(doc) {
 	if(task.reply) task.reply.date = formatDate(task.reply.date, true)
 
 	return task
+}
+
+export function useTimeGetter() {
+	const [ progresData, setProgressData ] = useState(null)
+	const [ page, setPage ] = useState(0)
+
+	useEffect(() => {
+		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, startAt } = Firestore
+		const modalitiesRef = collection(getFirestore(), Collections.MODALITIES)
+		const q = query(modalitiesRef, startAt(page), limit(15))
+
+		getDocs(q).then(async ({ docs }) => {
+			const returnedData = []
+			for (const { ref: { path: modPath }, data : getModData } of docs) {
+				const userTimeRef = doc(getFirestore(), modPath, getUserID())
+				const userTimeData = await getDoc(getFirestore(), userTimeRef)
+				if (userTimeData.exists()) {
+					const modData = getModData()
+					const userTime = userTimeData.get('total')
+
+					returnedData.push({
+						modality: modData,
+						userTime,
+						progress: modData.userTime / modData.limit * 100
+					})
+				}
+			}
+			setProgressData(returnedData)
+		})
+	}, [ page ])
+
+	const goTo = useCallback(delta => setPage(oldPage => oldPage + delta), [])
+
+	return { data: progresData, goTo }
 }
