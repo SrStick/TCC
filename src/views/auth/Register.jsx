@@ -4,7 +4,7 @@ import {
 	getAuth,
 	updateProfile
 } from "firebase/auth";
-import { doc, getFirestore, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, getFirestore, query, setDoc, Timestamp, where } from 'firebase/firestore';
 import { useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordField } from "../../components";
@@ -53,6 +53,13 @@ export default function Register() {
 			if (password !== passwordConfirmation)
 				throw new ValidationError('senhas não conferem', 'password')
 
+			const promoteListCollection = collection(getFirestore(), Collections.PROMOTE_LIST)
+
+			const now = Timestamp.now()
+			const promoteQuery = query(promoteListCollection, where('email', '==', email), where(now, '<=', 'validity'))
+			const { docs : promoteList } = await getDocs(promoteQuery)
+			const promoteData = promoteList[0]
+
 			let user
 			try {
 				user = await createUser(getAuth(), filledEmail, password).then(({ user }) => user)
@@ -64,10 +71,15 @@ export default function Register() {
 					name,
 					email,
 					registry: registry.value,
-					type: 'common'
+					type: !promoteData.exists() ? 'common' : 'moderator'
 				})
 			} catch (error) {
 				user.delete()
+			}
+
+			for(const item of promoteList) {
+				if(item.exists())
+					deleteDoc(doc(getFirestore(), Collections.PROMOTE_LIST, item.id))
 			}
 			
 			const fullNameArray = name.split(' ')

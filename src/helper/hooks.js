@@ -1,6 +1,7 @@
-import { useCallback, useRef, /*useEffect, useReducer,*/ useState } from "react";
+import { useCallback, useEffect, useRef, /*useEffect, useReducer,*/ useState } from "react";
 import { getUserID } from "./firebase";
 import * as Storage from 'firebase/storage'
+import { getDocs, query } from "firebase/firestore";
 
 export function useTrackUploadProgress() {
 	const [ uploadProgress, setUploadProgress ] = useState(0)

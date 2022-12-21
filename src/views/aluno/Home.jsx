@@ -18,6 +18,7 @@ function CommumUserHome() {
 		foreach: task => delete task.author,
 	})
 
+
 	const [clickedTask, setClickedTask] = useState()
 
 	return (

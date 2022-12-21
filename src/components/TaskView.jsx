@@ -7,7 +7,8 @@ function TaskView({ task, onFileClick }) {
 			sx={{
 				bgcolor: '#fff',
 				borderRadius: 1,
-				boxShadow: '4px 4px 10px 0px rgba(0,0,0,0.25)'
+				boxShadow: '4px 4px 10px 0px rgba(0,0,0,0.25)',
+				mb: 1
 			}}
 			secondaryAction={
 				<IconButton onClick={onFileClick} edge="end">

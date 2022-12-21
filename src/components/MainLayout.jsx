@@ -78,7 +78,7 @@ function MainLayout() {
 
 			<Dialog open={exitDialogIsOpen} onClose={showDialog('exit', false)}>
 				<DialogTitle>Atenção</DialogTitle>
-				<DialogContent>Deseja realmente sair</DialogContent>
+				<DialogContent>Deseja realmente sair?</DialogContent>
 				<DialogActions>
 					<Button onClick={user.singOut}>Sim</Button>
 					<Button variant='outlined' color='error' onClick={showDialog('exit', false)}>Não</Button>

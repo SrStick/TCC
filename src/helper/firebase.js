@@ -112,15 +112,21 @@ function TaskFactory(doc) {
 
 export function useTimeGetter() {
 	const [ progresData, setProgressData ] = useState(null)
-	const [ page, setPage ] = useState(0)
+	const [ lastDoc, setLastDoc ] = useState()
+	const lastDocRef = useRef()
 
 	useEffect(() => {
-		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, startAt, orderBy } = Firestore
+		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, startAfter, orderBy } = Firestore
 		const modalitiesRef = collection(getFirestore(), Collections.MODALITIES)
-		const q = query(modalitiesRef, orderBy('limit'), startAt(page), limit(15))
+		let q
+		if(lastDoc)
+			q = query(modalitiesRef, orderBy('limit', 'desc'), startAfter(lastDoc), limit(15))
+		else
+			q = query(modalitiesRef, orderBy('limit', 'desc'), limit(15))
 
 		getDocs(q).then(async ({ docs }) => {
 			const returnedData = []
+			lastDocRef.current = docs.at(-1)
 			for (const modMeta of docs) {
 				const userTimeRef = doc(getFirestore(), Collections.MODALITIES, modMeta.id, Collections.USER_TIMES, getUserID())
 				const userTimeData = await getDoc(userTimeRef)
@@ -137,9 +143,35 @@ export function useTimeGetter() {
 			}
 			setProgressData(returnedData)
 		})
-	}, [ page ])
+	}, [ lastDoc ])
 
-	const goTo = useCallback(delta => setPage(oldPage => oldPage + delta), [])
+	const next = useCallback(() => setLastDoc(lastDocRef.current), [])
 
-	return { data: progresData, goTo }
+	return { data: progresData, next }
+}
+
+export function useTimeGetterV2() {
+
+	const computedTasks = useTaskQuery({ constraints: [ Firestore.where('status', '==', Status.COMPUTADO) ] })
+
+	useEffect(() => {
+		if (computedTasks) {
+			const modIDs = computedTasks.map(task => task.modality.id)
+			const idSet = new Set(modIDs)
+
+			const r = new Map()
+			for (const modId of idSet) {
+				for (const task of computedTasks) {
+					if(task.modality.id === modId) {
+						const v = r.get(modId)
+						if (v) {
+							r.set(modId, v + task.reply.hors)
+						} else {
+							r.set(modId, task.reply.hors)
+						}
+					}
+				}
+			}
+		}
+	}, [computedTasks])
 }

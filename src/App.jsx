@@ -1,6 +1,6 @@
 import { CircularProgress, createTheme, Stack, ThemeProvider, Typography } from '@mui/material';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { useEffect, useState, Suspense, lazy, useRef } from 'react';
+import { useEffect, useState, Suspense, lazy, useRef, useCallback } from 'react';
 import { Routes, Route } from 'react-router-dom'
 
 import Login from './views/auth/Login';
@@ -14,9 +14,9 @@ import { useNavigate } from 'react-router-dom'
 /* HOME */
 import CoordenadorHome from "./views/coordenador/Home"
 import StudentHome from "./views/aluno/Home"
-import { useCallback } from 'react';
 
 const SendActivity = lazy(() => import('./views/aluno/SendActivity'))
+const Progress = lazy(() => import('./views/aluno/Progress'))
 const Modality = lazy(() => import('./views/coordenador/Modalities'))
 
 const UserProvider = UserContext.Provider
@@ -24,7 +24,6 @@ const UserProvider = UserContext.Provider
 function App() {
 	const [ loading, setLoading ] = useState(true)
 	const [ logged, setLogged ] = useState(false)
-	const [ noUserData, setNoUserData ] = useState(false)
 
 	const navigate = useNavigate()
 
@@ -37,12 +36,9 @@ function App() {
 		fetchData(beforeLoading) {
 			inLoadSrean(async () => {
 				const data = await getUserInfo()
-				if(!data) setNoUserData(true)
-				else {
-					this.info = data
-					this.isAdmin = data.type !== 'common'
-					setLogged(true)
-				}
+				this.info = data
+				this.isAdmin = data.type !== 'common'
+				setLogged(true)
 				if (beforeLoading) beforeLoading()
 			})
 		},
@@ -67,9 +63,7 @@ function App() {
 	
 	if (loading)
 		return <Loading />
-	else if (noUserData) {
-		// renderizar algo como sua conta foi desativada
-	} else if (!logged)
+	else if (!logged)
 		return (
 			<ThemeProvider theme={theme}>
 				<UserProvider value={userRef.current}>
@@ -81,9 +75,9 @@ function App() {
 				</UserProvider>
 			</ThemeProvider>
 		)
-
-	return (
-		<ThemeProvider theme={theme}>
+		
+		return (
+			<ThemeProvider theme={theme}>
 			<UserProvider value={userRef.current}>
 				<Suspense fallback={<Loading/>}>
 					<Routes>
@@ -91,9 +85,11 @@ function App() {
 							{!userRef.current.isAdmin ? (
 								<>
 									<Route path='send-activity' element={<SendActivity />} />
+									<Route path='progress' element={<Progress />} />
 								</>
 							) : (
 								<>
+									<Route path='new-moderator' element={<Register/>} />
 									<Route path='modalities' element={<Modality />} />
 								</>
 							)}
