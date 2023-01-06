@@ -1,10 +1,10 @@
-import { Card, CardContent, Typography, Box } from "@mui/material"
+import { Card, CardContent, Typography } from "@mui/material"
 import { CircularProgressWithLabel } from '../../components'
 import { useTimeGetter } from "../../helper/firebase"
 
-function toCard({ userTime, progress, modality: { description, limit } }) {
+function toCard({ id, userTime, progress, modality: { description, limit } }) {
 	return (
-		<Card>
+		<Card key={id}>
 			<CardContent
 				sx={{
 					display: 'flex',

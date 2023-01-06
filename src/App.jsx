@@ -21,23 +21,48 @@ const Modality = lazy(() => import('./views/coordenador/Modalities'))
 
 const UserProvider = UserContext.Provider
 
+function renderExtraRoutes(type) {
+	if(type === 'commun') {
+		return (
+			<>
+				<Route path='send-activity' element={<SendActivity />} />
+				<Route path='progress' element={<Progress />} />
+			</>
+		)
+	}
+
+	if(type === 'admin') {
+		return (
+			<>
+				<Route path='new-moderator' element={<Register/>} />
+				<Route path='modalities' element={<Modality />} />
+			</>
+		)
+	}
+	
+
+	return <Route path='modalities' element={<Modality />} />
+
+}
+
 function App() {
 	const [ loading, setLoading ] = useState(true)
 	const [ logged, setLogged ] = useState(false)
 
+	
 	const navigate = useNavigate()
-
+	
 	const inLoadSrean = useCallback(todoFunction => {
 		setLoading(true)
 		todoFunction().then(() => setLoading(false))
 	}, [])
-
+	
 	const userRef = useRef({
 		fetchData(beforeLoading) {
 			inLoadSrean(async () => {
 				const data = await getUserInfo()
 				this.info = data
-				this.isAdmin = data.type !== 'common'
+				this.type = data.type
 				setLogged(true)
 				if (beforeLoading) beforeLoading()
 			})
@@ -59,7 +84,6 @@ function App() {
 	})
 
 	useEffect(() => userRef.current.subscribe(), [])
-
 	
 	if (loading)
 		return <Loading />
@@ -82,18 +106,8 @@ function App() {
 				<Suspense fallback={<Loading/>}>
 					<Routes>
 						<Route path='/' element={<MainLayout/>}>
-							{!userRef.current.isAdmin ? (
-								<>
-									<Route path='send-activity' element={<SendActivity />} />
-									<Route path='progress' element={<Progress />} />
-								</>
-							) : (
-								<>
-									<Route path='new-moderator' element={<Register/>} />
-									<Route path='modalities' element={<Modality />} />
-								</>
-							)}
-							<Route index element={userRef.current.isAdmin ? <CoordenadorHome/> : <StudentHome/>}/>
+							{renderExtraRoutes(getUserType())}
+							<Route index element={getUserType() !== 'commun' ? <CoordenadorHome/> : <StudentHome/>}/>
 						</Route>
 						<Route path='*' element={<Error404/>}/>
 					</Routes>

@@ -8,7 +8,7 @@ import HomeIcon from '@mui/icons-material/Home';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import { NavLink as RouterNavLink, Outlet } from 'react-router-dom';
-import { promoteUser, useUser } from '../helper/firebase';
+import { useUser, addEmailToPromoteList } from '../helper/firebase';
 import { putEventTargetValue } from '../helper/short-functions';
 import Menu from './Menu';
 import { DialogContext } from '../helper/dialog-state-holders';
@@ -55,7 +55,7 @@ function MainLayout() {
 						spacing={2}
 					>
 						<Link to={'/'}><HomeIcon /></Link>
-						{ user.isAdmin ?
+						{ user.type !== 'commum' ?
 							<>
 								<Link to={'/modalities'}>Modalidades</Link>
 							</>
@@ -92,7 +92,7 @@ function MainLayout() {
 					<TextField onBlur={putEventTargetValue(setToPromoteEmail)} fullWidth />
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={promoteUser.bind(null, toPromoteEmail)}>Confirmar</Button>
+					<Button onClick={addEmailToPromoteList.bind(null, toPromoteEmail)}>Confirmar</Button>
 					<Button onClick={showDialog('promote', false)}>Voltar</Button>
 				</DialogActions>
 			</Dialog>

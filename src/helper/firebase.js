@@ -44,12 +44,12 @@ export async function promoteUser(email) {
 }
 
 export function addEmailToPromoteList(email) {
-	const { getFirestore, collection, addDoc, Timestamp } = Firestore
-	const promoteListRef = collection(getFirestore(), Collections.PROMOTE_LIST)
+	const { getFirestore, setDoc, doc, Timestamp } = Firestore
+	const promoteListRef = doc(getFirestore(), Collections.PROMOTE_LIST, email)
 
 	const sevenDaysLater = new Date()
 	sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
-	addDoc(promoteListRef, { email, validity: Timestamp.fromDate(sevenDaysLater) })
+	setDoc(promoteListRef, { validity: Timestamp.fromDate(sevenDaysLater) })
 }
 
 export const UserContext = createContext()
@@ -135,6 +135,7 @@ export function useTimeGetter() {
 					const userTime = userTimeData.get('total')
 
 					returnedData.push({
+						id: userTimeData.id,
 						modality: modData,
 						userTime,
 						progress: Math.floor(userTime / modData.limit * 100)
@@ -148,30 +149,4 @@ export function useTimeGetter() {
 	const next = useCallback(() => setLastDoc(lastDocRef.current), [])
 
 	return { data: progresData, next }
-}
-
-export function useTimeGetterV2() {
-
-	const computedTasks = useTaskQuery({ constraints: [ Firestore.where('status', '==', Status.COMPUTADO) ] })
-
-	useEffect(() => {
-		if (computedTasks) {
-			const modIDs = computedTasks.map(task => task.modality.id)
-			const idSet = new Set(modIDs)
-
-			const r = new Map()
-			for (const modId of idSet) {
-				for (const task of computedTasks) {
-					if(task.modality.id === modId) {
-						const v = r.get(modId)
-						if (v) {
-							r.set(modId, v + task.reply.hors)
-						} else {
-							r.set(modId, task.reply.hors)
-						}
-					}
-				}
-			}
-		}
-	}, [computedTasks])
 }

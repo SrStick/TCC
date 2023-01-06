@@ -1,11 +1,11 @@
-import { Button, InputAdornment, Link, TextField, Typography } from "@mui/material";
+import { Button, Link, TextField, Typography } from "@mui/material";
 import {
 	createUserWithEmailAndPassword as createUser,
 	getAuth,
 	updateProfile
 } from "firebase/auth";
-import { collection, deleteDoc, doc, getDocs, getFirestore, query, setDoc, Timestamp, where } from 'firebase/firestore';
-import { useState } from "react";
+import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import { useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordField } from "../../components";
 
@@ -15,23 +15,74 @@ import ValidationError from "../../helper/ValidationError";
 import AuthLayout from "./AuthLayout";
 import { useTextPatterns, PatternFunctions } from "../../helper/hooks";
 
+function geratePassword() {
+	const simbols = '!@#$%^&*()_+{}:"<>?\\|[];\',./'
+	const alpha = 'abcdefghijklmnopqrstuvwxyz'
+	const numbers = '0123456789'
+
+	function random(arg) {
+		const isArrayOrString = Array.isArray(arg) || typeof arg === 'string'
+		const n = Math.floor(Math.random() * (isArrayOrString ? arg.length : arg))
+		if(isArrayOrString)
+			return arg[n]
+
+		return n
+	}
+	
+	const password = []
+	const size = 8
+	const globalUsedSpots = new Set()
+
+	function setRandomInPassword(elementArray, times = 1) {
+		const usedSpots = new Set()
+
+		if(globalUsedSpots.size != size) {
+			while(usedSpots.size != times) {
+				const spot = random(size)
+				if(!globalUsedSpots.has(spot))
+					usedSpots.add(spot)
+			}
+		
+			for(const spot of usedSpots) {
+				password[spot] = random(elementArray)
+				globalUsedSpots.add(spot)
+			}
+		}
+	}
+	
+		setRandomInPassword(numbers, 2)
+		setRandomInPassword(alpha, 2)
+		setRandomInPassword(alpha.toUpperCase(), 2)
+		setRandomInPassword(simbols, 2)
+
+	return password.join('')
+}
+
 export default function Register() {
+	
+	const autoGaratedPass = useMemo(geratePassword, [])
+	
 	const [ name, setName ] = useState('')
 	const registry = useTextPatterns(PatternFunctions.onlyNumbers, PatternFunctions.limit(12))
 	const [ email, setEmail ] = useState('')
-	const [ password, setPassword ] = useState('')
-	const [ passwordConfirmation, setPasswordConfirmation ] = useState('')
+	
+	
+	const { state, pathname } = useLocation()
+	const isModerationRegister = pathname === '/new-moderator'
+	
+	const [ password, setPassword ] = useState(isModerationRegister ? autoGaratedPass : '')
+	const [ passwordConfirmation, setPasswordConfirmation ] = useState(isModerationRegister ? autoGaratedPass : '')
 
-	const [ showPassword, setShowPassword ] = useState(false)
+	const [ showPassword, setShowPassword ] = useState(isModerationRegister)
 	const [ error, setError ] = useState({})
 
-	const { state } = useLocation()
 	const navigate = useNavigate()
 
 	const user = useUser()
 
+
 	const singUp = () => {
-		const filledEmail = email + '@gsuite.iff.edu.br'
+		const { currentUser: initialUser } = getAuth()
 
 		user.unsubscribe()
 
@@ -52,34 +103,42 @@ export default function Register() {
 
 			if (password !== passwordConfirmation)
 				throw new ValidationError('senhas não conferem', 'password')
+			
+			const mandatoryPart = 'gsuite.iff.edu.br'
+			const brokenEmail = email.split('@')
+			if(brokenEmail[1] !== mandatoryPart)
+				throw new ValidationError(`só é possível cadastrar email institucionais. Ex. aluno@${mandatoryPart}`, 'email')
+				
+				if(brokenEmail.length === 0)
+					throw new ValidationError('email inválido', 'email')
 
-			const promoteListCollection = collection(getFirestore(), Collections.PROMOTE_LIST)
+			let promoteData
 
-			const now = Timestamp.now()
-			const promoteQuery = query(promoteListCollection, where('email', '==', email), where(now, '<=', 'validity'))
-			const { docs : promoteList } = await getDocs(promoteQuery)
-			const promoteData = promoteList[0]
+			if(!isModerationRegister) {
+				const promoteListRef = doc(getFirestore(), Collections.PROMOTE_LIST, email)
+	
+				promoteData = await getDoc(promoteListRef)
+			}
+
 
 			let user
 			try {
-				user = await createUser(getAuth(), filledEmail, password).then(({ user }) => user)
+				user = await createUser(getAuth(), email, password).then(({ user }) => user)
 			} catch (error) {
-				throw new ValidationError('email já cadastrado', 'email', error.code)
+				if (error.code === 'auth/weak-password')
+					throw new ValidationError('a senha deve ter o mínimo de seis caracteres', 'password', error.code)
+				if (error.code === 'auth/email-already-exists')
+					throw new ValidationError('email já cadastrado', 'email', error.code)
 			}
 			try {
 				await setDoc(doc(getFirestore(), Collections.USERS, user.uid), {
 					name,
-					email,
 					registry: registry.value,
-					type: !promoteData.exists() ? 'common' : 'moderator'
+					type: promoteData?.exists() ? 'common' : 'moderator',
+					firstAccess: true
 				})
 			} catch (error) {
 				user.delete()
-			}
-
-			for(const item of promoteList) {
-				if(item.exists())
-					deleteDoc(doc(getFirestore(), Collections.PROMOTE_LIST, item.id))
 			}
 			
 			const fullNameArray = name.split(' ')
@@ -95,7 +154,12 @@ export default function Register() {
 
 		trySingUp()
 		.then(() => {
-			user.subscribe(() => navigate('/'))
+			const subscribe = () => user.subscribe(() => navigate('/'))
+			debugger
+			if(isModerationRegister)
+				getAuth().updateCurrentUser(initialUser).then(subscribe)
+			else
+				subscribe()
 		})
 		.catch(error => {
 			const { field, message } = error
@@ -106,7 +170,18 @@ export default function Register() {
 	}
 
 	return (
-		<AuthLayout>
+		<AuthLayout hideLogo={isModerationRegister}>
+			{isModerationRegister &&
+				<>
+					<Typography
+						variant="h2"
+						fontSize='2.5rem'
+						component='h1'
+						mb={2}
+						color='error'
+					>Cadastro de Moderadores</Typography>
+				</>
+			}
 			<TextField
 				label='Nome completo'
 				onBlur={putEventTargetValue(setName)}
@@ -122,10 +197,6 @@ export default function Register() {
 			/>
 			<TextField
 				label='Email'
-				InputProps={{
-					endAdornment: 
-						<InputAdornment position="end">@gsuite.iff.edu.br</InputAdornment>
-				}}
 				error={!!error.email}
 				helperText={error.email}
 				defaultValue={state?.placeholder}
@@ -133,20 +204,25 @@ export default function Register() {
 			/>
 			<PasswordField
 				label='Senha'
+				show={showPassword}
+				defaultValue={password}
 				error={!!error.password}
 				onBlur={putEventTargetValue(setPassword)}
 				onChangeVisibility={setShowPassword}
-			/>
+				/>
 			<TextField
 				label='Confirmar senha'
+				defaultValue={passwordConfirmation}
 				type={showPassword ? 'text' : 'password'}
 				error={!!error.password}
 				helperText={error.password}
 				onBlur={putEventTargetValue(setPasswordConfirmation)}
 			/>
-			<Typography component='p' variant="body1" mb="5px">
-				Já tem uma conta? <Link to="/" component={RouterLink}>Entre aqui</Link>
-			</Typography>
+			{ !isModerationRegister && 
+				<Typography component='p' variant="body1" mb="5px">
+					Já tem uma conta? <Link to="/" component={RouterLink}>Entre aqui</Link>
+				</Typography>
+			}
 			<Button onClick={singUp} variant="contained">Cadastrar-se</Button>
 		</AuthLayout>
 	)

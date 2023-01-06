@@ -1,5 +1,5 @@
 import { Avatar, Divider, Drawer, ListItemIcon, Stack } from '@mui/material'
-import { useCallback } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from "react-router-dom";
@@ -9,15 +9,14 @@ import ListIcon from '@mui/icons-material/List';
 import RuleIcon from '@mui/icons-material/Rule';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
-import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import BeenhereIcon from '@mui/icons-material/Beenhere';
 
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import { useRef } from 'react';
+
 import { useShowDialog } from '../helper/dialog-state-holders';
-import { useEffect } from 'react';
 import { useUser } from '../helper/firebase';
 
 
@@ -28,9 +27,9 @@ function Menu({ open, onClose }) {
 
     const items = useRef([
         {
-            text: 'Usuários',
-            to: '/',
-            icon: <PeopleAltOutlinedIcon />
+            text: 'Progresso',
+            to: '/progress',
+            icon: <BeenhereIcon/>
         },
         {
             text: 'Atividades',
@@ -57,9 +56,11 @@ function Menu({ open, onClose }) {
     const userInfo = useUser()
 
     useEffect(() => {
-        if(!userInfo.isAdmin)
+        if(!userInfo.type === 'admin') {
+            items.current.splice(0, 1)
             items.current.splice(2, 1)
-    }, [])
+        }
+    }, [ userInfo ])
 
     const onItemClick = useCallback(({ to, action }) => {
         return () => {

@@ -1,13 +1,13 @@
 import { Stack, useTheme } from "@mui/material"
 import logo from '../../assets/iff.png'
 
-function AuthLayout({ children }) {
+function AuthLayout({ hideLogo, children }) {
 	const theme = useTheme()
 
 	return (
 		<Stack
 			sx={{
-				height: '100vh',
+				height:  !hideLogo ? '100vh' : undefined,
 				flexDirection: 'row',
 				'.MuiFormControl-root': { width: '85%' },
 				'.MuiInputBase-root': {
@@ -19,26 +19,28 @@ function AuthLayout({ children }) {
 				}
 			}
 		}>
+			{!hideLogo &&
 			<Stack
-				alignItems='center'
-				justifyContent='center'
-				width='100%'
-				borderRight='1px solid #bdbdbd'
+			alignItems='center'
+			justifyContent='center'
+			width='100%'
+			borderRight='1px solid #bdbdbd'
 			>
 				<img
 					src={logo}
 					alt='logo do iff'
 					style={{ width: '20vw' }}
-				/>
+					/>
 			</Stack>
+			}
 			<Stack
 				alignItems='center'
 				justifyContent='center'
 				width='100%'
 				gap='10px'
 				padding='35px'
-			>
-				{children}
+				>
+					{children}
 			</Stack>
 		</Stack>
 	)
