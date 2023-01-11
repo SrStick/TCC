@@ -1,6 +1,15 @@
-import { InfoDialog } from '../../components'
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slide, TextField, Tooltip, Typography, Skeleton, InputAdornment, Card } from "@mui/material"
-import { useState, useCallback, forwardRef } from "react";
+import { InfoDialog, PasswordField } from '../../components'
+import {
+	Button, Dialog,
+	DialogActions, DialogContent,
+	DialogTitle, IconButton,
+	Slide, TextField,
+	Tooltip, Typography,
+	Skeleton, InputAdornment,
+	Card, FormControl,
+	MenuItem, InputLabel, Select
+} from "@mui/material"
+import { useState, useRef, useCallback, forwardRef, useEffect, useMemo } from "react";
 
 import InfoIcon from '@mui/icons-material/InfoOutlined';
 import FactCheckIcon from '@mui/icons-material/FactCheckOutlined';
@@ -16,15 +25,85 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import Toolbar from '@mui/material/Toolbar';
 
 /* FIREBASE */
-import { Collections, useTaskQuery, getUserID, Status, useUser } from '../../helper/firebase';
-import { doc, getFirestore, increment, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { Collections, useTaskQuery, getUserID, Status, useUser, UserType } from '../../helper/firebase';
+import { doc, getFirestore, increment, setDoc, Timestamp, updateDoc, deleteField } from 'firebase/firestore';
 import { PatternFunctions, useTextPatterns } from '../../helper/hooks';
+import { someEmpty, putEventTargetValue } from '../../helper/short-functions';
+import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 
 const SlideTransition = forwardRef((props, ref) => 
 	<Slide direction="up" ref={ref} {...props} />
 )
+
+function ChangePasswordPanel() {
+	const [ newPasswordIsVisible, setNewPasswordIsvisible ] = useState(false)
+	const [ oldPassword, setOldPassword ] = useState('')
+	const [ newPassword, setNewPassword ] = useState('')
+	const [ confimation, setConfimation ] = useState('')
+	const [ errorMessage, setErrorMesssage ] = useState()
+	const [ success, setSuccess ] = useState(false)
+	const [ closed, setClosed ] = useState(false)
+
+	async function send({ target }) {
+		if(newPassword != confimation)
+			setErrorMesssage('a nova senha não é igual a sua confirmação')
+			else {
+				target.disabled = true
+				const user = getAuth().currentUser
+				const credential = EmailAuthProvider.credential(user.email, oldPassword)
+				try {
+					const { authUser } = await reauthenticateWithCredential(user, credential)
+					await updatePassword(authUser, newPassword)
+					setSuccess(true)
+					setTimeout(() => setClosed(true), 1000 * 2)
+				} catch(err) {
+					if(err.code)
+						setErrorMesssage('senha atual incorreta')
+				console.log(err.toString())
+			}
+		}
+	}
+
+	if(closed)
+		return null
+
+	if(success)
+		return (
+			<Card color='success'>
+				<Typography>Senha alterada com sucesso</Typography>
+			</Card>
+		)
+
+	return (
+		<div className='flex-col-center'>
+			<Card sx={{ display: 'flex', flexDirection: 'column', px: 5, py: 2, mb: 2, rowGap: 2 }}>
+				<Typography variant='h6'>Altere sua senha</Typography>
+				<PasswordField
+					label='Senha atuel'
+					value={oldPassword}
+					onChange={putEventTargetValue(setOldPassword)}
+				/>
+				<PasswordField
+					label='Nova senha'
+					value={newPassword}
+					onChange={putEventTargetValue(setNewPassword)}
+					onChangeVisibility={setNewPasswordIsvisible}
+				/>
+				<TextField
+					label='Confirmar nova senha'
+					value={confimation}
+					type={newPasswordIsVisible ? 'text' : 'password'}
+					onChange={putEventTargetValue(setConfimation)}
+				/>
+				{errorMessage && <Typography fontSize='italic' color='error'>{errorMessage}</Typography>}
+				<Button disabled={someEmpty(oldPassword, newPassword, confimation)} onClick={send}>Alterar senha</Button>
+			</Card>
+		</div>
+	)
+}
 
 const ShadowRows = () => {
 	const rows = []
@@ -48,26 +127,45 @@ function AdminHome() {
 	const [ infoIsOpen, setInfoIsOpen ] = useState(false)
 	const [ openStatusChange, setOpenStatusChange ] = useState(false)
 	const [ rejectCurrentTask, setRejectCurrentTask ] = useState(false)
-	
+	const [ filter, setFilter ] = useState('all')
+
 	const tasks = useTaskQuery()
 	const user = useUser()
 
+	const visibleTasks = useMemo(() => {
+		if (tasks === null)
+			return []
+		if(filter === 'all')
+			return tasks
+
+		return tasks.filter(task => task.status === Status.EM_ANALISE)
+	}, [ tasks, filter ])
+
+
+	const comments = useTextPatterns(PatternFunctions.limit(200))
+
+	const isFirstAccessOfModerator = useRef(user.type === UserType.MODERATOR && user.info.firstAccess)
+	
+	useEffect(() => {
+		if(isFirstAccessOfModerator.current) {
+			updateDoc(doc(getFirestore(), Collections.USERS, getUserID()), { firstAccess: deleteField() })
+		}
+	}, [ user ])
+
 	const replyHours = useTextPatterns(PatternFunctions.onlyNumbers)
 
-	const sendReply = useCallback((id, ok = true, comments) => {
+	const sendReply = useCallback(status => {
 		const firestore = getFirestore()
-		const currentTask = tasks[clickedIndex]
+		const currentTask = visibleTasks[clickedIndex]
 		const modalityId = currentTask.modality.id
-		const status = ok ? Status.COMPUTADO : Status.NEGADO
 
 		const reply = {
 			author: { name: user.info.name, uid: getUserID() },
-			date: Timestamp.now(),
-			hours: parseInt(replyHours.value, 10)
+			date: Timestamp.now()
 		}
 
-		if (comments)
-			reply.comments = comments
+		if (comments.value)
+			reply.comments = comments.value
 
 		const currentModalityUserTime = doc(
 			firestore,
@@ -77,59 +175,96 @@ function AdminHome() {
 			currentTask.author.uid
 		)
 
-		const asyncActions = [ updateDoc(doc(firestore, Collections.TASKS, id), { status, reply }) ]
+		const asyncActions = [
+			updateDoc(doc(firestore, Collections.TASKS, currentTask.id), { status, reply })
+		]
 
-		if(status === Status.COMPUTADO)
+		if(status === Status.COMPUTADO) {
+			reply.hours = parseFloat(replyHours.value)
 			asyncActions.push(setDoc(currentModalityUserTime, { total: increment(reply.hours) }))
+		}
 
 	return Promise.all(asyncActions) 
-	}, [ user.info.name, replyHours.value, tasks, clickedIndex ])
+	}, [ user.info.name, replyHours.value, visibleTasks, clickedIndex, comments.value ])
 
 	const closeStatusChangeDialog = useCallback(() => {
 		setRejectCurrentTask(false)
 		setOpenStatusChange(false)
 	}, [])
 
-	const toInfoRow = useCallback((task, index) => (
-		<TableRow key={task.id}>
-			<TableCell>{task.description}</TableCell>
-			<TableCell>{task.date}</TableCell>
-			<TableCell>{task.author.name}</TableCell>
-			<TableCell align="center" onClickCapture={() => setClickedIndex(index)}>
-				<Tooltip title="Mais informações">
-					<IconButton color='info' onClickCapture={() => setInfoIsOpen(true)}>
-						<InfoIcon />
-					</IconButton>
-				</Tooltip>
-				<Tooltip title="Avaliar">
-					<IconButton onClick={() => setOpenStatusChange(true)}>
-						<FactCheckIcon />
-					</IconButton>
-				</Tooltip>
-			</TableCell>
-		</TableRow> 
-	), [])
+	const rendererRows = useCallback(() => {
+
+		const toInfoRow = (task, index) => (
+			<TableRow key={task.id}>
+				<TableCell>{task.description}</TableCell>
+				<TableCell>{task.date}</TableCell>
+				<TableCell>{task.author.name}</TableCell>
+				<TableCell align="center" onClickCapture={() => setClickedIndex(index)}>
+					<Tooltip title="Mais informações">
+						<IconButton color='info' onClickCapture={() => setInfoIsOpen(true)}>
+							<InfoIcon />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Avaliar">
+						<div style={{ display: 'inline-block' }}>
+							<IconButton disabled={task.status !== Status.EM_ANALISE} onClick={() => setOpenStatusChange(true)}>
+								<FactCheckIcon />
+							</IconButton>
+						</div>
+					</Tooltip>
+				</TableCell>
+			</TableRow> 
+		)
+
+		if(tasks === null)
+			return <ShadowRows/>
+
+		if(visibleTasks.length === 0)
+			return (
+				<TableRow>
+					<TableCell sx={{ fontStyle: 'italic', color: 'neutral.main' }} colSpan='4' align='center'>Vazio</TableCell>
+				</TableRow>
+			)
+		
+		return visibleTasks.map(toInfoRow)
+	}, [ tasks, visibleTasks ])
 
 	return (
 		<>
-		<Card>
-			
-		</Card>
-			<TableContainer component={Paper}>
-				<Table>
-					<TableHead>
-					<TableRow>
-						<TableCell>Descrição</TableCell>
-						<TableCell>Data de Envio</TableCell>
-						<TableCell>Autor</TableCell>
-						<TableCell align="center">Ações</TableCell>
-					</TableRow>
-					</TableHead>
-					<TableBody>
-						{tasks?.length ? tasks.map(toInfoRow) : <ShadowRows/>}
-					</TableBody>
-				</Table>
-			</TableContainer>
+			{/*isFirstAccessOfModerator.current &&*/ <ChangePasswordPanel/>}
+			<Paper>
+				<Toolbar sx={{ pl: { sm: 2 }, display: 'flex', justifyContent: 'space-between' }}>
+					<Typography variant='h6'>Quadro de avaliação</Typography>
+					<FormControl>
+					<InputLabel>Filtro</InputLabel>
+						<Select
+							value={filter}
+							label='Filtro'
+							onChange={putEventTargetValue(setFilter)}
+							fullWidth
+							size='small'
+						>
+							<MenuItem value='all'>Todas as atividades</MenuItem>
+							<MenuItem value='pending'>Atividades não avaliadas</MenuItem>
+						</Select>
+					</FormControl>
+				</Toolbar>
+				<TableContainer>
+					<Table>
+						<TableHead>
+						<TableRow>
+							<TableCell>Descrição</TableCell>
+							<TableCell>Data de Envio</TableCell>
+							<TableCell>Autor</TableCell>
+							<TableCell align="center">Ações</TableCell>
+						</TableRow>
+						</TableHead>
+						<TableBody>
+							{rendererRows()}
+						</TableBody>
+					</Table>
+				</TableContainer>
+			</Paper>
 
 			<Dialog
 				open={openStatusChange}
@@ -153,7 +288,7 @@ function AdminHome() {
 						:
 						<>
 							<Typography>Deixe algum comentário para, por exemplo, explicar o motivo.</Typography>
-							<TextField multiline minRows={3} />
+							<TextField onChange={comments.onChange}  multiline minRows={3} />
 						</>
 					}
 				</DialogContent>
@@ -168,11 +303,12 @@ function AdminHome() {
 						startIcon={ <CloseIcon/> }
 						color="error"
 						variant="outlined"
+						disabled={(rejectCurrentTask && someEmpty(comments.value)) || someEmpty(replyHours.value) }
 						onClick={() => {
 							if(!rejectCurrentTask) {
 								setRejectCurrentTask(true)
 							} else {
-								console.log('atividade rejeitada');
+								sendReply(Status.NEGADO)
 								closeStatusChangeDialog()
 							}
 						}}
@@ -183,8 +319,8 @@ function AdminHome() {
 							startIcon={ <CheckIcon/> }
 							variant="outlined"
 							onClick={() => {
-								const currentTask = tasks[clickedIndex]
-								sendReply(currentTask.id).then(() => setOpenStatusChange(false))
+								sendReply(Status.COMPUTADO)
+								closeStatusChangeDialog()
 							}}
 						>Confirmar</Button>
 					}
@@ -194,7 +330,7 @@ function AdminHome() {
 			<InfoDialog
 				open={infoIsOpen}
 				onClose={() => setInfoIsOpen(false)}
-				task={tasks ? tasks[clickedIndex] : null}
+				task={visibleTasks.length !== 0 ? visibleTasks[clickedIndex] : null}
 			/>
 		</>
 	)

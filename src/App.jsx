@@ -22,7 +22,7 @@ const Modality = lazy(() => import('./views/coordenador/Modalities'))
 const UserProvider = UserContext.Provider
 
 function renderExtraRoutes(type) {
-	if(type === 'commun') {
+	if(type === 'common') {
 		return (
 			<>
 				<Route path='send-activity' element={<SendActivity />} />
@@ -85,6 +85,8 @@ function App() {
 
 	useEffect(() => userRef.current.subscribe(), [])
 	
+console.log(userRef.current);
+
 	if (loading)
 		return <Loading />
 	else if (!logged)
@@ -106,8 +108,8 @@ function App() {
 				<Suspense fallback={<Loading/>}>
 					<Routes>
 						<Route path='/' element={<MainLayout/>}>
-							{renderExtraRoutes(getUserType())}
-							<Route index element={getUserType() !== 'commun' ? <CoordenadorHome/> : <StudentHome/>}/>
+							{renderExtraRoutes(userRef.current.type)}
+							<Route index element={userRef.current.type !== 'common' ? <CoordenadorHome/> : <StudentHome/>}/>
 						</Route>
 						<Route path='*' element={<Error404/>}/>
 					</Routes>

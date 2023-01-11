@@ -9,6 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import CloseIcon from '@mui/icons-material/Close'
 import { PatternFunctions, useTextPatterns } from "../../helper/hooks"
 import { useRef } from "react"
+import { someEmpty } from "../../helper/short-functions"
 
 function Modality() {
 	const [modalities, setModalities] = useState([])
@@ -105,16 +106,17 @@ function Modality() {
 	)
 }
 
-const defaultInnerData = { type: 'Hora' }
+const defaultInnerData = { type: 'default' }
 
 function FormDialog({ open, onClose, title, data }) {
 	const [ innerData, setInnerData ] = useState()
 	const description = useTextPatterns(PatternFunctions.limit(300))
 	const limit = useTextPatterns(PatternFunctions.onlyNumbers)
-	const correspondingTime = useTextPatterns(PatternFunctions.onlyNumbers)
+	const amount = useTextPatterns(PatternFunctions.onlyNumbers)
 
 
 	const types = useRef([
+		'default',
 		'Hora',
 		'Dia',
 		'Semestre',
@@ -123,7 +125,7 @@ function FormDialog({ open, onClose, title, data }) {
 		'Apresentação',
 		'Evento',
 		'Exercício de Cargo',
-		'Outro'
+		'Outra'
 	])
 
 	useEffect(() => {
@@ -149,22 +151,21 @@ function FormDialog({ open, onClose, title, data }) {
 	}, [ description.value ])
 
 	useEffect(() => {
-		setInnerData(oldData => ({ ...oldData, correspondingTime: correspondingTime.value }))
-	}, [ correspondingTime.value ])
+		setInnerData(oldData => ({ ...oldData, amount: amount.value }))
+	}, [ amount.value ])
 
 	const save = useCallback(() => {
 		const firestore = getFirestore()
 		
-		const copyOfInnerData = {
-			...innerData,
-			correspondingTime: parseInt(innerData.correspondingTime, 10),
-			limit: parseInt(innerData.limit, 10)
+		const saveObject = {}
+		for (const [k, v] of Object.entries(innerData)) {
+			saveObject[k] = !isNaN(v) ? parseFloat(v) : v
 		}
 
 		if(data) {
-			updateDoc(doc(firestore, Collections.MODALITIES, data.id), copyOfInnerData).then(onClose)
+			updateDoc(doc(firestore, Collections.MODALITIES, data.id), saveObject).then(onClose)
 		} else {
-			addDoc(collection(firestore, Collections.MODALITIES), copyOfInnerData).then(onClose)
+			addDoc(collection(firestore, Collections.MODALITIES), saveObject).then(onClose)
 		}
 	}, [ data, innerData, onClose ])
 
@@ -183,7 +184,11 @@ function FormDialog({ open, onClose, title, data }) {
 					<Typography ml={2} flex={1} variant="h6" component="div">
 						{title}
 					</Typography>
-					<Button sx={{ color: 'inherit' }} onClick={save}>salvar</Button>
+					<Button
+						sx={{ color: 'inherit' }}
+						disabled={someEmpty(description.value, amount.value, limit.value) || innerData.type === types.current[0]}
+						onClick={save}
+					>salvar</Button>
 				</Toolbar>
 			</AppBar>
 			<Stack
@@ -198,10 +203,10 @@ function FormDialog({ open, onClose, title, data }) {
 					label='Descrição'/>
 
 				<TextField
-					value={innerData?.correspondingTime ?? ''}
-					name='correspondingTime'
-					onChange={correspondingTime.onChange}
-					label='Tempo correspondente'/>
+					value={innerData?.amount ?? ''}
+					name='amount'
+					onChange={amount.onChange}
+					label='Quantidade (em horas)'/>
 
 				<TextField
 					value={innerData?.limit ?? ''}
@@ -210,26 +215,32 @@ function FormDialog({ open, onClose, title, data }) {
 
 
 				<FormControl>
-					<InputLabel>Tipo</InputLabel>
+					<InputLabel>Unidade</InputLabel>
 					<Select
 						value={innerData?.type}
 						onChange={updateInnerData()}
 						name="type"
-						label='Tipo'
+						label='Unidade'
 					>
-						{types.current.map(type => <MenuItem key={type} value={type}>{type}</MenuItem>) }
+						{types.current.map(type =>
+							<MenuItem key={type} value={type}>
+								{type === types.current[0] ? 'Selecione uma unidade' : type}
+							</MenuItem>
+						)}
 					</Select>
 					<FormHelperText>
 						Informe como essa modalidade será contabilizada.
 					</FormHelperText>
 				</FormControl>
-				{innerData?.type === 'Outro' &&
+				{innerData?.type === types.current.at(-1) &&
 					<TextField
 						value={innerData?.otherType ?? ''}
 						name='otherType'
+						placeholder="especifique uma unidade"
 						onChange={updateInnerData()}
 					/>
 				}
+				<Typography fontStyle='italic' color='neutral.main'>Todos os campos são obrigatórios</Typography>
 			</Stack>
 		</Dialog>
 	)

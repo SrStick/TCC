@@ -6,12 +6,16 @@ import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCallback, useEffect, useState } from "react";
 import { useTrackUploadProgress } from "../../helper/hooks";
-import { percentCalc, putEventTargetValue } from '../../helper/short-functions'
+import { someEmpty, percentCalc, putEventTargetValue } from '../../helper/short-functions'
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, Timestamp } from "firebase/firestore";
 import { Collections, extractData, getUserID, Status, useUser } from "../../helper/firebase";
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 
 const DESCRIPTION_LIMIT = 300
+
+const allowedFileTypes = ['png', 'jpg', 'jpeg', 'jpe', 'pdf']
+
 
 function SendActivity() {
 	const [ files, setFiles ] = useState([])
@@ -19,10 +23,22 @@ function SendActivity() {
 	const [ modalities, setModalities ] = useState([])
 	const [ description, setDescription ] = useState('')
 	const [ descriptionSizeProgress, setDescriptionSizeProgress ] = useState(0)
-	const [ uploadProgress, filesInfo, trackFiles ] = useTrackUploadProgress()
+
+	const [ uploadProgress, completedUploads, trackFiles ] = useTrackUploadProgress()
+
+	const notAllowedFileType = useMemo(() => {
+		const notAllowed = file => {
+			const fileExt = file.name.split('.')[1]
+			return !fileExt || allowedFileTypes.every(v => v !== fileExt)
+		}
+		return files.some(notAllowed)
+	}, [ files ])
+
+	const [ modiltyIsDefautOnSend, setModiltyIsDefautOnSend ] = useState(false)
 
 	const user = useUser()
 	const navigate = useNavigate()
+
 
 	useEffect(() => {
 		const modalitiesCollection = collection(getFirestore(), Collections.MODALITIES)
@@ -47,13 +63,22 @@ function SendActivity() {
 		})
 	}, [])
 
+
+
+
 	useEffect(() => {
 		setDescriptionSizeProgress(percentCalc(description.length, DESCRIPTION_LIMIT))
 	}, [ description ])
 
+
+
+
 	const removeFile = useCallback(name => {
 		setFiles(prevValue => prevValue.filter(file => file.name !== name));
 	}, [])
+
+
+
 
 	const onDescriptionChange = useCallback(({ target: { value: text } }) => {
 		const progress = percentCalc(text.length, DESCRIPTION_LIMIT)
@@ -61,6 +86,9 @@ function SendActivity() {
 			setDescription(text)
 		}
 	}, [ description ])
+
+
+
 
 	const onPasteDescription = ev => {
 		ev.preventDefault()
@@ -84,18 +112,16 @@ function SendActivity() {
 		}).then(() => navigate('/'))
 	}, [ description, modalityId, modalities, user, navigate ])
 
-	useEffect(() => {
-		if (filesInfo.length === files.length && files.length !== 0) {
-			const toURL = file => file.url
-			const mergeInfo = (url, i) => ({ ...filesInfo[i], url })
-
-			Promise.all(filesInfo.map(toURL))
-			.then(urls => urls.map(mergeInfo))
-			.then(onFinishUpload)
+	const beginUpload = useCallback(({ target }) => {
+		const modalityIsDefault = modalityId === 'default'
+		
+		if(!modalityIsDefault) {
+			target.disabled = true
+			trackFiles(files, onFinishUpload)
 		}
-	}, [ filesInfo, files, onFinishUpload ])
-
-	const beginUpload = useCallback(() => trackFiles(files), [ files, trackFiles ])
+		
+		setModiltyIsDefautOnSend(modalityIsDefault)
+	}, [ files, trackFiles, onFinishUpload, modalityId ])
 
 	return (
 		<>
@@ -113,6 +139,11 @@ function SendActivity() {
 						)}
 					</Select>
 				</FormControl>
+				{ modiltyIsDefautOnSend && (
+					<Typography fontStyle='italic' color='error'>
+						Selecione uma modalidade
+					</Typography>
+				)}
 				<Box sx={{ position: 'relative', pt: 3 }}>
 					<CircularProgress
 						sx={{
@@ -140,13 +171,17 @@ function SendActivity() {
 					<UploadFileIcon/>
 					<input
 						type='file'
-						accept=".png,.jpg,.jpeg,.jpe,.pdf"
+						accept={allowedFileTypes.map(s => '.' + s).join(',')}
 						hidden
 						multiple
 						onChange={e => setFiles(Array.from(e.target.files))}
 					/>
 				</Fab>
-
+				{ notAllowedFileType &&
+				<Typography fontStyle='italic' color='error'>
+					São permitidos somente arquivos em PDF ou imagens.
+				</Typography>
+				}
 				<Stack direction='row' spacing={2} sx={{ border: '1px solid #e0e0e0', p: '15px' }}>
 					{files.map(({ name }) => <FileItem key={name} name={name} onClose={removeFile} />)}
 				</Stack>
@@ -158,10 +193,15 @@ function SendActivity() {
 					color="secondary"
 				/>
 				<Typography variant="body1" component='span'>
-					{filesInfo.length}/{files.length}
+					{completedUploads}/{files.length}
 				</Typography>
 				
-				<Button variant="contained" endIcon={<SendIcon/>} onClick={beginUpload}>Enviar</Button>
+				<Button
+					variant="contained"
+					endIcon={<SendIcon/>}
+					onClick={beginUpload}
+					disabled={notAllowedFileType || files.length === 0 || someEmpty(description)}
+				>Enviar</Button>
 			</Stack>
 		</>
 	)

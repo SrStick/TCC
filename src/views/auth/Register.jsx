@@ -9,8 +9,8 @@ import { useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordField } from "../../components";
 
-import { Collections, useUser } from "../../helper/firebase";
-import { putEventTargetValue } from '../../helper/short-functions';
+import { Collections, UserType, useUser } from "../../helper/firebase";
+import { someEmpty, putEventTargetValue } from '../../helper/short-functions';
 import ValidationError from "../../helper/ValidationError";
 import AuthLayout from "./AuthLayout";
 import { useTextPatterns, PatternFunctions } from "../../helper/hooks";
@@ -97,7 +97,7 @@ export default function Register() {
 				.set('password', password)
 			
 			for (const [k, v] of fieldsMap.entries()) {
-				if(v.trim() === '')
+				if(someEmpty(v))
 					throw new ValidationError(emptyMessage, k)
 			}
 
@@ -107,7 +107,7 @@ export default function Register() {
 			const mandatoryPart = 'gsuite.iff.edu.br'
 			const brokenEmail = email.split('@')
 			if(brokenEmail[1] !== mandatoryPart)
-				throw new ValidationError(`só é possível cadastrar email institucionais. Ex. aluno@${mandatoryPart}`, 'email')
+				throw new ValidationError(`só é possível cadastrar emails institucionais. Ex. aluno@${mandatoryPart}`, 'email')
 				
 				if(brokenEmail.length === 0)
 					throw new ValidationError('email inválido', 'email')
@@ -134,7 +134,7 @@ export default function Register() {
 				await setDoc(doc(getFirestore(), Collections.USERS, user.uid), {
 					name,
 					registry: registry.value,
-					type: promoteData?.exists() ? 'common' : 'moderator',
+					type: promoteData?.exists() ? UserType.COMMON : UserType.MODERATOR,
 					firstAccess: true
 				})
 			} catch (error) {
@@ -198,7 +198,7 @@ export default function Register() {
 			<TextField
 				label='Email'
 				error={!!error.email}
-				helperText={error.email}
+				helperText={error.email ?? 'só é possível cadastrar emails institucionais (exemplo@gsuite.iff.edu.br)'}
 				defaultValue={state?.placeholder}
 				onBlur={putEventTargetValue(setEmail)}
 			/>
@@ -207,6 +207,7 @@ export default function Register() {
 				show={showPassword}
 				defaultValue={password}
 				error={!!error.password}
+				helperText='mínimo de 6 caracteres'
 				onBlur={putEventTargetValue(setPassword)}
 				onChangeVisibility={setShowPassword}
 				/>

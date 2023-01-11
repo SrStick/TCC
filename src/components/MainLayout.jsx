@@ -55,7 +55,7 @@ function MainLayout() {
 						spacing={2}
 					>
 						<Link to={'/'}><HomeIcon /></Link>
-						{ user.type !== 'commum' ?
+						{ user.type !== 'common' ?
 							<>
 								<Link to={'/modalities'}>Modalidades</Link>
 							</>

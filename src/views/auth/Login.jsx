@@ -1,48 +1,39 @@
 import {
-	signInWithEmailAndPassword,
-	getAuth,
-	setPersistence as setAuthPersistence,
-	browserSessionPersistence
+	browserSessionPersistence, getAuth,
+	setPersistence as setAuthPersistence, signInWithEmailAndPassword
 } from "firebase/auth";
 
 import {
-	Button,
-	TextField,
-	Link,
-	FormControlLabel,
-	Checkbox,
-	Divider,
-	Stack,
+	Button, Checkbox,
+	Divider, FormControlLabel, Link, Stack, TextField
 } from "@mui/material";
 
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState, useContext } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
-
-import { putEventTargetValue, putToggle } from '../../helper/short-functions'
 import { PasswordField } from "../../components";
-import AuthLayout from "./AuthLayout";
-import { useContext } from "react";
 import { UserContext } from "../../helper/firebase";
+import { someEmpty, putEventTargetValue, putToggle } from '../../helper/short-functions';
+import AuthLayout from "./AuthLayout";
 
 export default function Login() {
 	const [ email, setEmail ] = useState('')
 	const [ password, setPassword ] = useState('')
 	const [ persistAuth, setPesistAuth ] = useState(true)
-	const [ disableSingIn, setDisableSingIn ] = useState(true)
 	const [ singInPlaceholder, setSingInPlaceholder ] = useState('')
+	
+	const disableSingIn = useMemo(() => someEmpty(email, password), [ email, password ])
+
+	const [ emailErrorMessage, setEmailErrorMessage ] = useState()
+	const [ passwordErrorMessage, setPasswordErrorMessage ] = useState()
 
 	const user = useContext(UserContext)
 	const navigate = useNavigate()
 
-	useEffect(() => {
-		setDisableSingIn(email.trim() === '' || password.trim() === '')
-	}, [email, password])
-
 	const getPlaceholder = ({ target: { value: email } }) => {
 		const beforeToken = email.split('@')[0]
-		if(email.trim() && beforeToken)
+		if(!someEmpty(email) && beforeToken)
 			setSingInPlaceholder(beforeToken)
 	}
 
@@ -55,11 +46,17 @@ export default function Login() {
 			await signInWithEmailAndPassword(auth, email, password)
 			user.fetchData(() => navigate('/'))
 		} catch (err) {
+			if (err.code === 'auth/user-not-found')
+				setEmailErrorMessage('este email não está cadastrado')
+			
+			if (err.code === 'auth/wrong-password')
+				setPasswordErrorMessage('senha incorreta')
+
 			if (process.env.NODE_ENV === 'development')
 				console.log(err.toString())
 		}
 
-	}, [email, password, persistAuth, user, navigate])
+	}, [ email, password, persistAuth, user, navigate ])
 
 	return (
 		<AuthLayout>
@@ -68,10 +65,14 @@ export default function Login() {
 				onChange={putEventTargetValue(setEmail)}
 				onBlur={getPlaceholder}
 				type='email'
-			/>
+				error={!!emailErrorMessage}
+				helperText={emailErrorMessage}
+				/>
 			<PasswordField
 				onChange={putEventTargetValue(setPassword)}
 				label='Senha'
+				error={!!passwordErrorMessage}
+				helperText={passwordErrorMessage}
 			/>
 			<Button
 				onClick={singIn}

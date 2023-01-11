@@ -12,8 +12,14 @@ export const Collections = {
 
 export const Status = {
 	EM_ANALISE: 'Em Análise',
-	NEGADO: 'Negodo',
-	COMPUTADO: 'Computado'
+	NEGADO: 'Negado',
+	COMPUTADO: 'Validada'
+}
+
+export const UserType = {
+	COMMON: 'common',
+	ADMIN: 'admin',
+	MODERATOR: 'moderator'
 }
 
 export function getUserInfo() {
@@ -64,15 +70,17 @@ export function extractData(doc) {
 
 export function useTaskQuery(options) {
 	const [ tasks, setTasks ] = useState(null)
-	const [ page, setPage ] = useState(0)
 	const optionsRef = useRef(options)
-
-	// const navigate = delta => setPage(n => n + delta)
+	const [ lastDoc, setLastDoc ] = useState()
+	const lastDocRef = useRef()
 
 	useEffect(() => {
 		const { collection, getFirestore, query, limit, startAt, orderBy, onSnapshot } = Firestore
 		const tasksCollection = collection(getFirestore(), Collections.TASKS)
-		const startConstraints = [ orderBy('date'), limit(20), startAt(page) ]
+		const startConstraints = [ orderBy('date', 'desc'), limit(20) ]
+
+		if (lastDoc)
+			startConstraints.push(startAt(lastDoc))
 		
 		const options = optionsRef.current
 		const userConstraints = options?.constraints ?? []
@@ -82,13 +90,14 @@ export function useTaskQuery(options) {
 		return onSnapshot(q, ({ docs }) => {
 			const { foreach } = options || {}
 			const tasks = docs.map(TaskFactory)
+			lastDocRef.current = docs.at(-1)
 			
 			if (foreach)
 				tasks.forEach(foreach)
 
 			setTasks(tasks)
 		})
-	}, [ page ])
+	}, [ lastDoc ])
 
 	return tasks
 }
@@ -112,26 +121,33 @@ function TaskFactory(doc) {
 
 export function useTimeGetter() {
 	const [ progresData, setProgressData ] = useState(null)
-	const [ lastDoc, setLastDoc ] = useState()
-	const lastDocRef = useRef()
+
+	const [ limits, setLimits ] = useState()
+	const limitsRef = useRef()
+	const lastMove = useRef(0)
+	
 
 	useEffect(() => {
-		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, startAfter, orderBy } = Firestore
+		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, limitToLast, endBefore, startAfter } = Firestore
 		const modalitiesRef = collection(getFirestore(), Collections.MODALITIES)
+		const pageSize = 15
 		let q
-		if(lastDoc)
-			q = query(modalitiesRef, orderBy('limit', 'desc'), startAfter(lastDoc), limit(15))
+
+		if(lastMove.current === 1)
+			q = query(modalitiesRef, startAfter(limits.last), limit(pageSize))
+		else if(lastMove.current === -1)
+			q = query(modalitiesRef, endBefore(limits.first), limitToLast(pageSize))
 		else
-			q = query(modalitiesRef, orderBy('limit', 'desc'), limit(15))
+			q = query(modalitiesRef, limit(15))
 
 		getDocs(q).then(async ({ docs }) => {
 			const returnedData = []
-			lastDocRef.current = docs.at(-1)
+			limitsRef.current = { first: docs.at(0), last: docs.at(-1) }
 			for (const modMeta of docs) {
 				const userTimeRef = doc(getFirestore(), Collections.MODALITIES, modMeta.id, Collections.USER_TIMES, getUserID())
 				const userTimeData = await getDoc(userTimeRef)
+				const modData = extractData(modMeta)
 				if (userTimeData.exists()) {
-					const modData = modMeta.data()
 					const userTime = userTimeData.get('total')
 
 					returnedData.push({
@@ -140,13 +156,18 @@ export function useTimeGetter() {
 						userTime,
 						progress: Math.floor(userTime / modData.limit * 100)
 					})
-				}
+				} else
+					returnedData.push({ id: modData.id, modality: modData, userTime: 0, progress: 0 })
 			}
-			setProgressData(returnedData)
+
+			setProgressData([ ...returnedData ].sort((a, b) => b.userTime - a.userTime))
 		})
-	}, [ lastDoc ])
+	}, [ limits ])
 
-	const next = useCallback(() => setLastDoc(lastDocRef.current), [])
+	const move = useCallback(dir => {
+		lastMove.current = dir
+		setLimits(limitsRef.current)
+	}, [])
 
-	return { data: progresData, next }
+	return { data: progresData, move }
 }

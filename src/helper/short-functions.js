@@ -12,3 +12,7 @@ export function putToggle(setFunction) {
 export function percentCalc(currentValue, totalValue) {
 	return Math.round((currentValue / totalValue) * 100)
 }
+
+export function someEmpty(...values) {
+	return values.some(v => v.trim() === '')
+}

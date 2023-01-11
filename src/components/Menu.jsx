@@ -10,6 +10,7 @@ import RuleIcon from '@mui/icons-material/Rule';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BeenhereIcon from '@mui/icons-material/Beenhere';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -17,7 +18,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useShowDialog } from '../helper/dialog-state-holders';
-import { useUser } from '../helper/firebase';
+import { UserType, useUser } from '../helper/firebase';
 
 
 function Menu({ open, onClose }) {
@@ -47,6 +48,11 @@ function Menu({ open, onClose }) {
             icon: <RuleIcon />
         },
         {
+            text: 'Cadastrar Moderador',
+            to: '/new-moderator',
+            icon: <SupervisorAccountIcon />
+        },
+        {
             text: 'Sair',
             icon: <LogoutIcon />,
             action: showDialog('exit')
@@ -56,9 +62,21 @@ function Menu({ open, onClose }) {
     const userInfo = useUser()
 
     useEffect(() => {
-        if(!userInfo.type === 'admin') {
-            items.current.splice(0, 1)
-            items.current.splice(2, 1)
+        function remove(to) {
+            const itemsValue = items.current
+            const position = itemsValue.findIndex(item => item.to === to)
+            if(position != -1)
+                itemsValue.splice(position, 1)
+        }
+
+        if(userInfo.type === UserType.COMMON) {
+            remove('/modalities')
+            remove('/new-moderator')
+        } else if (userInfo.type === UserType.ADMIN) {
+            remove('/progress')
+        } else {
+            remove('/progress')
+            remove('/new-moderator')
         }
     }, [ userInfo ])
 
@@ -83,9 +101,14 @@ function Menu({ open, onClose }) {
             <Divider/>
             <List>
                 {items.current.map(item => (
-                    <ListItem key={item.text} disablePadding>
+                    <ListItem
+                        key={item.text}
+                        disablePadding
+                    >
                         <ListItemButton onClick={onItemClick(item)}>
-                            <ListItemIcon>{item.icon}</ListItemIcon>
+                            <ListItemIcon
+                                color='red'
+                            >{item.icon}</ListItemIcon>
                             <ListItemText primary={item.text} />
                         </ListItemButton>
                     </ListItem>
