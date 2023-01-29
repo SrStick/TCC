@@ -133,12 +133,11 @@ function AdminHome() {
 	const user = useUser()
 
 	const visibleTasks = useMemo(() => {
-		if (tasks === null)
-			return []
+		const data = tasks.data
 		if(filter === 'all')
-			return tasks
+			return data
 
-		return tasks.filter(task => task.status === Status.EM_ANALISE)
+		return data.filter(task => task.status === Status.EM_ANALISE)
 	}, [ tasks, filter ])
 
 
@@ -216,7 +215,7 @@ function AdminHome() {
 			</TableRow> 
 		)
 
-		if(tasks === null)
+		if(tasks.isLoading)
 			return <ShadowRows/>
 
 		if(visibleTasks.length === 0)
@@ -265,6 +264,8 @@ function AdminHome() {
 					</Table>
 				</TableContainer>
 			</Paper>
+
+			<Button disabled={!tasks.grownUp()} onClick={() => tasks.next()}>Carregar mais dados</Button>
 
 			<Dialog
 				open={openStatusChange}

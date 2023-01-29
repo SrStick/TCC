@@ -105,12 +105,19 @@ export default function Register() {
 				throw new ValidationError('senhas não conferem', 'password')
 			
 			const mandatoryPart = 'gsuite.iff.edu.br'
+
+			let numberOfAts = 0
+			for(const char of email) {
+				if(char === '@')
+					numberOfAts++
+			}
+
+			if(numberOfAts === 0 || numberOfAts > 1)
+				throw new ValidationError('email inválido', 'email')
+
 			const brokenEmail = email.split('@')
 			if(brokenEmail[1] !== mandatoryPart)
 				throw new ValidationError(`só é possível cadastrar emails institucionais. Ex. aluno@${mandatoryPart}`, 'email')
-				
-				if(brokenEmail.length === 0)
-					throw new ValidationError('email inválido', 'email')
 
 			let promoteData
 
@@ -130,13 +137,18 @@ export default function Register() {
 				if (error.code === 'auth/email-already-exists')
 					throw new ValidationError('email já cadastrado', 'email', error.code)
 			}
+
+			const newDoc = {
+				name,
+				registry: registry.value,
+				type: promoteData?.exists() ? UserType.MODERATOR : UserType.COMMON
+			}
+
+			if (isModerationRegister) 
+				newDoc.firstAccess = true
+
 			try {
-				await setDoc(doc(getFirestore(), Collections.USERS, user.uid), {
-					name,
-					registry: registry.value,
-					type: promoteData?.exists() ? UserType.COMMON : UserType.MODERATOR,
-					firstAccess: true
-				})
+				await setDoc(doc(getFirestore(), Collections.USERS, user.uid), newDoc)
 			} catch (error) {
 				user.delete()
 			}
@@ -155,7 +167,6 @@ export default function Register() {
 		trySingUp()
 		.then(() => {
 			const subscribe = () => user.subscribe(() => navigate('/'))
-			debugger
 			if(isModerationRegister)
 				getAuth().updateCurrentUser(initialUser).then(subscribe)
 			else

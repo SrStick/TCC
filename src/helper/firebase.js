@@ -70,17 +70,21 @@ export function extractData(doc) {
 
 export function useTaskQuery(options) {
 	const [ tasks, setTasks ] = useState(null)
+	const [ taskStack, setTaskStack ] = useState([])
+
 	const optionsRef = useRef(options)
 	const [ lastDoc, setLastDoc ] = useState()
 	const lastDocRef = useRef()
 
+	const [ isLoading, setIsLoading ] = useState(true)
+
 	useEffect(() => {
-		const { collection, getFirestore, query, limit, startAt, orderBy, onSnapshot } = Firestore
+		const { collection, getFirestore, query, limit, startAfter, orderBy, onSnapshot } = Firestore
 		const tasksCollection = collection(getFirestore(), Collections.TASKS)
 		const startConstraints = [ orderBy('date', 'desc'), limit(20) ]
 
 		if (lastDoc)
-			startConstraints.push(startAt(lastDoc))
+			startConstraints.push(startAfter(lastDoc))
 		
 		const options = optionsRef.current
 		const userConstraints = options?.constraints ?? []
@@ -99,7 +103,24 @@ export function useTaskQuery(options) {
 		})
 	}, [ lastDoc ])
 
-	return tasks
+	useEffect(() => {
+		if(tasks !== null) {
+			setIsLoading(false)
+			setTaskStack(oldValue => oldValue.concat(tasks))
+		}
+	} , [ tasks ])
+
+	const next = useCallback(() => setLastDoc(lastDocRef.current), [])
+
+
+	return {
+		data: taskStack,
+		next,
+		isLoading,
+		grownUp() {
+			return !this.loading && tasks?.length !== 0
+		}
+	}
 }
 
 function formatDate(timestemp, showTime) {
@@ -138,7 +159,7 @@ export function useTimeGetter() {
 		else if(lastMove.current === -1)
 			q = query(modalitiesRef, endBefore(limits.first), limitToLast(pageSize))
 		else
-			q = query(modalitiesRef, limit(15))
+			q = query(modalitiesRef, limit(pageSize))
 
 		getDocs(q).then(async ({ docs }) => {
 			const returnedData = []
