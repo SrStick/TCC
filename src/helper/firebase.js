@@ -69,57 +69,72 @@ export function extractData(doc) {
 }
 
 export function useTaskQuery(options) {
-	const [ tasks, setTasks ] = useState(null)
 	const [ taskStack, setTaskStack ] = useState([])
-
+	const [ filterByStatus, setFilterByStatus ] = useState('all')
+	
 	const optionsRef = useRef(options)
+	const lastDocsRef = useRef()
 	const [ lastDoc, setLastDoc ] = useState()
-	const lastDocRef = useRef()
-
+	
 	const [ isLoading, setIsLoading ] = useState(true)
 
 	useEffect(() => {
-		const { collection, getFirestore, query, limit, startAfter, orderBy, onSnapshot } = Firestore
+		const { collection, getFirestore, query, limit, startAfter, orderBy, onSnapshot, where } = Firestore
 		const tasksCollection = collection(getFirestore(), Collections.TASKS)
 		const startConstraints = [ orderBy('date', 'desc'), limit(20) ]
 
+		const hasFilter = filterByStatus !== 'all'
+		if (!Object.values(Status).includes(filterByStatus) && hasFilter)
+			throw new Error("Invalid Status")
+
 		if (lastDoc)
 			startConstraints.push(startAfter(lastDoc))
+
+		if(hasFilter)
+			startConstraints.push(where('status', '==', filterByStatus))
 		
 		const options = optionsRef.current
 		const userConstraints = options?.constraints ?? []
 		
 		const q = query(tasksCollection, ...startConstraints.concat(userConstraints))
 		
-		return onSnapshot(q, ({ docs }) => {
+		return onSnapshot(q, snap => {
 			const { foreach } = options || {}
-			const tasks = docs.map(TaskFactory)
-			lastDocRef.current = docs.at(-1)
 			
+			const docsChanges = snap.docChanges()
+			const addedDocs = docsChanges
+				.filter(change => change.type === 'added')
+				.map(change => change.doc)
+				.map(TaskFactory)
+
 			if (foreach)
-				tasks.forEach(foreach)
-
-			setTasks(tasks)
-		})
-	}, [ lastDoc ])
-
-	useEffect(() => {
-		if(tasks !== null) {
+				addedDocs.forEach(foreach)
+			
+			lastDocsRef.current = snap.docs
+			setTaskStack(oldValue => {
+				docsChanges
+					.filter(change => change.type === 'modified')
+					.map(change => change.doc)
+					.forEach(newDoc => {
+						const index = oldValue.findIndex(task => task.id === newDoc.id)
+						oldValue[index] = TaskFactory(newDoc)
+					})
+					return oldValue.concat(addedDocs)
+				})
 			setIsLoading(false)
-			setTaskStack(oldValue => oldValue.concat(tasks))
-		}
-	} , [ tasks ])
+		})
+	}, [ lastDoc, filterByStatus ])
 
-	const next = useCallback(() => setLastDoc(lastDocRef.current), [])
-
+	const next = useCallback(() => setLastDoc(lastDocsRef.current.at(-1)), [])
 
 	return {
 		data: taskStack,
 		next,
 		isLoading,
 		grownUp() {
-			return !this.loading && tasks?.length !== 0
-		}
+			return !isLoading && lastDocsRef.current?.length !== 0
+		},
+		showOnly: setFilterByStatus
 	}
 }
 
@@ -162,6 +177,8 @@ export function useTimeGetter() {
 			q = query(modalitiesRef, limit(pageSize))
 
 		getDocs(q).then(async ({ docs }) => {
+			// items de subcoleções diferentes podem ter o mesmo id 
+			let tempId = 0 
 			const returnedData = []
 			limitsRef.current = { first: docs.at(0), last: docs.at(-1) }
 			for (const modMeta of docs) {
@@ -172,7 +189,7 @@ export function useTimeGetter() {
 					const userTime = userTimeData.get('total')
 
 					returnedData.push({
-						id: userTimeData.id,
+						id: ++tempId,
 						modality: modData,
 						userTime,
 						progress: Math.floor(userTime / modData.limit * 100)

@@ -19,6 +19,7 @@ import ListItemText from '@mui/material/ListItemText';
 
 import { useShowDialog } from '../helper/dialog-state-holders';
 import { UserType, useUser } from '../helper/firebase';
+import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
 
 function Menu({ open, onClose }) {
@@ -44,8 +45,11 @@ function Menu({ open, onClose }) {
         },
         {
             text: 'Regulamentos',
-            to: '/',
-            icon: <RuleIcon />
+            icon: <RuleIcon />,
+            action() {
+                getDownloadURL(ref(getStorage(), 'ppc.pdf'))
+                    .then(link => window.open(link, '_blank'))
+            }
         },
         {
             text: 'Cadastrar Moderador',
@@ -101,14 +105,9 @@ function Menu({ open, onClose }) {
             <Divider/>
             <List>
                 {items.current.map(item => (
-                    <ListItem
-                        key={item.text}
-                        disablePadding
-                    >
+                    <ListItem key={item.text} disablePadding>
                         <ListItemButton onClick={onItemClick(item)}>
-                            <ListItemIcon
-                                color='red'
-                            >{item.icon}</ListItemIcon>
+                            <ListItemIcon color='red'>{item.icon}</ListItemIcon>
                             <ListItemText primary={item.text} />
                         </ListItemButton>
                     </ListItem>

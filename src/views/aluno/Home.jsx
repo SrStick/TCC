@@ -13,7 +13,7 @@ import { where } from "firebase/firestore";
 
 
 function CommumUserHome() {
-	const tasks = useTaskQuery({
+	const {data : tasks } = useTaskQuery({
 		constraints: [ where('author.uid', '==', getUserID()) ],
 		foreach: task => delete task.author,
 	})
@@ -33,7 +33,7 @@ function CommumUserHome() {
 				>
 					{ tasks !== null ?
 						<Typography color={'inherit'} padding={2}>
-							Começe adicionando uma atividade.
+							Bem vindo, começe adicionando uma atividade.
 						</Typography>
 					:
 						<CircularProgress color={'inherit'} sx={{ my: 2 }}/>
@@ -42,7 +42,7 @@ function CommumUserHome() {
 			</IfBlock>
 			<Stack alignItems={'center'}>
 				<List sx={{ minWidth: 300 }}>
-					{tasks?.map(task =>
+					{tasks.map(task =>
 						<TaskView
 							key={task.id}
 							task={task}

@@ -15,12 +15,20 @@ const SlideTransition = forwardRef((props, ref) => (
 
 function InfoDialog({ open, onClose, task }) {
 
-	const { modality, files, reply, status } = task ?? {}
+	const { modality, files, reply, status, description } = task ?? {}
 
 	return (
 		<Dialog open={open} onClose={onClose} TransitionComponent={SlideTransition} keepMounted>
 			<DialogTitle>Informações</DialogTitle>
 			<DialogContent>
+				{ description && (
+					<Box mb={'20px'}>
+						<Divider sx={{ mb: 1 }}>
+							<Typography component='h3' letterSpacing='.1ch' variant="h6">Descrição</Typography>
+						</Divider>
+						<Typography>{description}</Typography>
+					</Box>
+				)}
 				{ modality && (
 					<Box mb={'20px'}>
 						<Divider sx={{ mb: 1 }}>

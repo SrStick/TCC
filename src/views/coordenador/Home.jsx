@@ -174,12 +174,15 @@ function AdminHome() {
 			currentTask.author.uid
 		)
 
+		if(status === Status.COMPUTADO) {
+			reply.hours = parseFloat(replyHours.value)
+		}
+
 		const asyncActions = [
 			updateDoc(doc(firestore, Collections.TASKS, currentTask.id), { status, reply })
 		]
 
 		if(status === Status.COMPUTADO) {
-			reply.hours = parseFloat(replyHours.value)
 			asyncActions.push(setDoc(currentModalityUserTime, { total: increment(reply.hours) }))
 		}
 
@@ -230,7 +233,7 @@ function AdminHome() {
 
 	return (
 		<>
-			{/*isFirstAccessOfModerator.current &&*/ <ChangePasswordPanel/>}
+			{isFirstAccessOfModerator.current && <ChangePasswordPanel/>}
 			<Paper>
 				<Toolbar sx={{ pl: { sm: 2 }, display: 'flex', justifyContent: 'space-between' }}>
 					<Typography variant='h6'>Quadro de avaliação</Typography>
@@ -304,7 +307,7 @@ function AdminHome() {
 						startIcon={ <CloseIcon/> }
 						color="error"
 						variant="outlined"
-						disabled={(rejectCurrentTask && someEmpty(comments.value)) || someEmpty(replyHours.value) }
+						disabled={rejectCurrentTask && someEmpty(comments.value) }
 						onClick={() => {
 							if(!rejectCurrentTask) {
 								setRejectCurrentTask(true)
@@ -319,6 +322,7 @@ function AdminHome() {
 						<Button
 							startIcon={ <CheckIcon/> }
 							variant="outlined"
+							disabled={someEmpty(replyHours.value)}
 							onClick={() => {
 								sendReply(Status.COMPUTADO)
 								closeStatusChangeDialog()

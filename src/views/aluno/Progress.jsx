@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from "@mui/material"
+import { Box, LinearProgress, Paper, Stack, Typography } from "@mui/material"
 import { useMemo } from "react"
 import { CircularProgressWithLabel } from '../../components'
 import { useTimeGetter } from "../../helper/firebase"
@@ -34,14 +34,16 @@ function toCard({ id, userTime, progress, modality: { description, limit } }) {
 
 function ProgressView() {
 	const p = useTimeGetter()
-
+	
 	const totalProgress = useMemo(() => {
 		if(p.data) {
 			const progress = p.data.map(data => data.userTime).reduce((a, b) => a + b)
-			return progress / 360 * 100
+			return Math.floor(progress / 360 * 100)
 		}
 		return 0
 	}, [ p.data ])
+
+	const progessColor = totalProgress < 100 ? 'neutral' : 'success'
 	return (
 		<Box sx={{
 			display: { sm: 'flex', md: 'grid' },
@@ -52,6 +54,31 @@ function ProgressView() {
 		}}
 		>
 			{ p.data && p.data.map(toCard) }
+			<Stack
+				sx={{
+					gridColumnEnd: 'span 3',
+					flexDirection: 'row',
+					alignItems: 'center',
+					columnGap: 1
+				}}
+			>
+			<Typography
+				color={progessColor}
+				fontSize={'1.5rem'}
+			>Progresso total</Typography>
+
+			<LinearProgress
+				variant="determinate"
+				color={progessColor}
+				sx={{ height: 10, flex: 1 }}
+				value={totalProgress}
+			/>
+
+			<Typography
+				color={progessColor}
+				fontSize={'1.5rem'}
+			>{totalProgress}%</Typography>
+			</Stack>
 		</Box>
 	)
 }
