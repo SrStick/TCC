@@ -133,12 +133,11 @@ function AdminHome() {
 	const user = useUser()
 
 	const visibleTasks = useMemo(() => {
-		if (tasks === null)
-			return []
+		const data = tasks.data
 		if(filter === 'all')
-			return tasks
+			return data
 
-		return tasks.filter(task => task.status === Status.EM_ANALISE)
+		return data.filter(task => task.status === Status.EM_ANALISE)
 	}, [ tasks, filter ])
 
 
@@ -175,12 +174,15 @@ function AdminHome() {
 			currentTask.author.uid
 		)
 
+		if(status === Status.COMPUTADO) {
+			reply.hours = parseFloat(replyHours.value)
+		}
+
 		const asyncActions = [
 			updateDoc(doc(firestore, Collections.TASKS, currentTask.id), { status, reply })
 		]
 
 		if(status === Status.COMPUTADO) {
-			reply.hours = parseFloat(replyHours.value)
 			asyncActions.push(setDoc(currentModalityUserTime, { total: increment(reply.hours) }))
 		}
 
@@ -216,7 +218,7 @@ function AdminHome() {
 			</TableRow> 
 		)
 
-		if(tasks === null)
+		if(tasks.isLoading)
 			return <ShadowRows/>
 
 		if(visibleTasks.length === 0)
@@ -231,7 +233,7 @@ function AdminHome() {
 
 	return (
 		<>
-			{/*isFirstAccessOfModerator.current &&*/ <ChangePasswordPanel/>}
+			{isFirstAccessOfModerator.current && <ChangePasswordPanel/>}
 			<Paper>
 				<Toolbar sx={{ pl: { sm: 2 }, display: 'flex', justifyContent: 'space-between' }}>
 					<Typography variant='h6'>Quadro de avaliação</Typography>
@@ -265,6 +267,8 @@ function AdminHome() {
 					</Table>
 				</TableContainer>
 			</Paper>
+
+			<Button disabled={!tasks.grownUp()} onClick={() => tasks.next()}>Carregar mais dados</Button>
 
 			<Dialog
 				open={openStatusChange}
@@ -303,7 +307,7 @@ function AdminHome() {
 						startIcon={ <CloseIcon/> }
 						color="error"
 						variant="outlined"
-						disabled={(rejectCurrentTask && someEmpty(comments.value)) || someEmpty(replyHours.value) }
+						disabled={rejectCurrentTask && someEmpty(comments.value) }
 						onClick={() => {
 							if(!rejectCurrentTask) {
 								setRejectCurrentTask(true)
@@ -318,6 +322,7 @@ function AdminHome() {
 						<Button
 							startIcon={ <CheckIcon/> }
 							variant="outlined"
+							disabled={someEmpty(replyHours.value)}
 							onClick={() => {
 								sendReply(Status.COMPUTADO)
 								closeStatusChangeDialog()

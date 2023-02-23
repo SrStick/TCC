@@ -1,11 +1,15 @@
 import React from 'react'
-import { Avatar, Divider, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material'
-import { useCallback, useRef, useEffect } from 'react'
+import { Avatar, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material'
+import { useRef, useEffect } from 'react'
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from "react-router-dom";
+import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
 import Typography from '@mui/material/Typography';
 import ListIcon from '@mui/icons-material/List';
+import SourceIcon from '@mui/icons-material/Source';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PeopleIcon from '@mui/icons-material/People';
 import RuleIcon from '@mui/icons-material/Rule';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -13,7 +17,6 @@ import BeenhereIcon from '@mui/icons-material/Beenhere';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -59,9 +62,10 @@ function Menu({ open, onClose }) {
     ])
 
     const userInfo = useUser()
-    const [openItem, setOpenItem] = React.useState(false);
+    const [openUsers, setOpenUsers] = React.useState(false);
+    const [openActivities, setOpenActivities] = React.useState(false);
 
-    /* useEffect(() => {
+    useEffect(() => {
         function remove(to) {
             const itemsValue = items.current
             const position = itemsValue.findIndex(item => item.to === to)
@@ -78,9 +82,9 @@ function Menu({ open, onClose }) {
             remove('/progress')
             remove('/new-moderator')
         }
-    }, [ userInfo ]) */
+    }, [ userInfo ])
 
-   /*  const onItemClick = useCallback(({ to, action }) => {
+    /* const onItemClick = useCallback(({ to, action }) => {
         return () => {
             if(to)
                 navigate(to)
@@ -101,36 +105,36 @@ function Menu({ open, onClose }) {
                     width: 300,
                 }}
 			>
-				<ListItemButton onClick={() => setOpenItem(!openItem)}>
+				<ListItemButton onClick={() => setOpenActivities(!openActivities)}>
 					<ListItemIcon>
                         <ListIcon />
 					</ListItemIcon>
 					<ListItemText primary="Atividades" />
-					{openItem ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+					{openActivities ? <ExpandLessIcon /> : <ExpandMoreIcon />}
 				</ListItemButton>
 
-				<Collapse in={openItem} timeout="auto" unmountOnExit>
+				<Collapse in={openActivities} timeout="auto" unmountOnExit>
 					<List component="div" disablePadding>
                         <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/send-activity')}>
                             <ListItemText primary="Submeter Atividades" />
                         </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/progress')}>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/')}>
                             <ListItemText primary="Listar Atividades" />
                         </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/modalities')}>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/progress')}>
                             <ListItemText primary="Visualizar Situação" />
                         </ListItemButton>
 					</List>
 				</Collapse>
 
-                <ListItemButton onClick={() => navigate('/modalities')}>
+                <ListItemButton onClick={() => getDownloadURL(ref(getStorage(), 'ppc.pdf')).then(link => window.open(link, '_blank'))}>
                     <ListItemIcon color='red'>
-                        <RuleIcon />
+                        <DescriptionIcon />
                     </ListItemIcon>
                     <ListItemText primary={'Regulamentos'} />
                 </ListItemButton>
 
-                <ListItemButton onClick={() =>  showDialog('exit')}>
+                <ListItemButton onClick={showDialog('exit')}>
                     <ListItemIcon color='red'>
                         <LogoutIcon />
                     </ListItemIcon>
@@ -150,36 +154,48 @@ function Menu({ open, onClose }) {
                     width: 300,
                 }}
             >
-                <ListItemButton onClick={() => setOpenItem(!openItem)}>
+
+                <ListItemButton onClick={() => setOpenUsers(!openUsers)}>
                     <ListItemIcon>
-                        <ListIcon />
+                        <PeopleIcon />
                     </ListItemIcon>
-                    <ListItemText primary="Atividades" />
-                    {openItem ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    <ListItemText primary="Usuários" />
+                    {openUsers ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                 </ListItemButton>
 
-                <Collapse in={openItem} timeout="auto" unmountOnExit>
+                <Collapse in={openUsers} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/send-activity')}>
-                            <ListItemText primary="Submeter Atividades" />
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('new-moderator')}>
+                            <ListItemText primary="Adicionar colaborador" />
                         </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/progress')}>
-                            <ListItemText primary="Listar Atividades" />
-                        </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/modalities')}>
-                            <ListItemText primary="Visualizar Situação" />
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/')}>
+                            <ListItemText primary="Listar colaboradores" />
                         </ListItemButton>
                     </List>
                 </Collapse>
 
+                <ListItemButton onClick={() => navigate('/')}>
+                    <ListItemIcon color='red'>
+                        <ListIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={'Atividades'} />
+                </ListItemButton>
+
                 <ListItemButton onClick={() => navigate('/modalities')}>
                     <ListItemIcon color='red'>
-                        <RuleIcon />
+                        <SourceIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={'Modalidades'} />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => getDownloadURL(ref(getStorage(), 'ppc.pdf')).then(link => window.open(link, '_blank'))}>
+                    <ListItemIcon color='red'>
+                        <DescriptionIcon />
                     </ListItemIcon>
                     <ListItemText primary={'Regulamentos'} />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => showDialog('exit')}>
+                <ListItemButton onClick={showDialog('exit')}>
                     <ListItemIcon color='red'>
                         <LogoutIcon />
                     </ListItemIcon>

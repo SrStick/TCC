@@ -1,4 +1,4 @@
-import { Fab, Stack, TextField, Typography, LinearProgress, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, Box, Tooltip } from "@mui/material"
+import { Fab, Stack, TextField, Typography, LinearProgress, Button, Select, MenuItem, FormControl, InputLabel, Box, Tooltip } from "@mui/material"
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ArticleIcon from '@mui/icons-material/Article';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
@@ -23,6 +23,7 @@ function SendActivity() {
 	const [ modalities, setModalities ] = useState([])
 	const [ description, setDescription ] = useState('')
 	const [ descriptionSizeProgress, setDescriptionSizeProgress ] = useState(0)
+	const [ sendButtonClicked, setSendButtonClicked ] = useState(false)
 
 	const [ uploadProgress, completedUploads, trackFiles ] = useTrackUploadProgress()
 
@@ -112,11 +113,10 @@ function SendActivity() {
 		}).then(() => navigate('/'))
 	}, [ description, modalityId, modalities, user, navigate ])
 
-	const beginUpload = useCallback(({ target }) => {
+	const beginUpload = useCallback(() => {
 		const modalityIsDefault = modalityId === 'default'
-		
 		if(!modalityIsDefault) {
-			target.disabled = true
+			setSendButtonClicked(true)
 			trackFiles(files, onFinishUpload)
 		}
 		
@@ -144,19 +144,11 @@ function SendActivity() {
 						Selecione uma modalidade
 					</Typography>
 				)}
-				<Box sx={{ position: 'relative', pt: 3 }}>
-					<CircularProgress
-						sx={{
-							alignSelf: 'center',
-							position: 'absolute',
-							top: 0,
-							right: 0,
-							mr: 1,
-							mb: 1
-						}}
+				<Box sx={{ pt: 3 }}>
+					<LinearProgress
 						variant="determinate"
 						value={descriptionSizeProgress}
-						size='20px'
+						sx={{ mb: 2 }}
 					/>
 					<TextField
 						label="Descrição"
@@ -200,7 +192,7 @@ function SendActivity() {
 					variant="contained"
 					endIcon={<SendIcon/>}
 					onClick={beginUpload}
-					disabled={notAllowedFileType || files.length === 0 || someEmpty(description)}
+					disabled={ sendButtonClicked || notAllowedFileType || files.length === 0 || someEmpty(description)}
 				>Enviar</Button>
 			</Stack>
 		</>

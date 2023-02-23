@@ -5,10 +5,9 @@ import { useCallback, useState } from 'react';
 
 import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
-
 import MenuIcon from '@mui/icons-material/Menu';
 import { NavLink as RouterNavLink, Outlet } from 'react-router-dom';
-import { useUser, addEmailToPromoteList } from '../helper/firebase';
+import { useUser, addEmailToPromoteList, UserType } from '../helper/firebase';
 import { putEventTargetValue } from '../helper/short-functions';
 import Menu from './Menu';
 import { DialogContext } from '../helper/dialog-state-holders';
@@ -21,7 +20,8 @@ function MainLayout() {
 	const [ promoteDialogIsOpen, setPromoteDialogIsOpen ] = useState(false)
 	const [ toPromoteEmail, setToPromoteEmail ] = useState('')
 
-	const showDialog = useCallback((name, visible = true) => {
+	const showDialog = useCallback((name, visible = true) => {	
+
 		let fn
 		switch (name) {
 			case 'exit': fn = setExitDialogIsOpen; break
@@ -55,7 +55,7 @@ function MainLayout() {
 						spacing={2}
 					>
 						<Link to={'/'}><HomeIcon /></Link>
-						{ user.type !== 'common' ?
+						{ user.type !== UserType.COMMON ?
 							<>
 								<Link to={'/modalities'}>Modalidades</Link>
 							</>
