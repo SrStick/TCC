@@ -1,6 +1,6 @@
-import { Avatar, Divider, Drawer, ListItemIcon, Stack } from '@mui/material'
+import React from 'react'
+import { Avatar, Divider, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material'
 import { useCallback, useRef, useEffect } from 'react'
-
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from "react-router-dom";
 
@@ -15,7 +15,8 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useShowDialog } from '../helper/dialog-state-holders';
 import { UserType, useUser } from '../helper/firebase';
@@ -23,9 +24,7 @@ import { UserType, useUser } from '../helper/firebase';
 
 function Menu({ open, onClose }) {
     const navigate = useNavigate()
-
     const showDialog = useShowDialog()
-
     const items = useRef([
         {
             text: 'Progresso',
@@ -60,8 +59,9 @@ function Menu({ open, onClose }) {
     ])
 
     const userInfo = useUser()
+    const [openItem, setOpenItem] = React.useState(false);
 
-    useEffect(() => {
+    /* useEffect(() => {
         function remove(to) {
             const itemsValue = items.current
             const position = itemsValue.findIndex(item => item.to === to)
@@ -78,9 +78,9 @@ function Menu({ open, onClose }) {
             remove('/progress')
             remove('/new-moderator')
         }
-    }, [ userInfo ])
+    }, [ userInfo ]) */
 
-    const onItemClick = useCallback(({ to, action }) => {
+   /*  const onItemClick = useCallback(({ to, action }) => {
         return () => {
             if(to)
                 navigate(to)
@@ -88,9 +88,107 @@ function Menu({ open, onClose }) {
                 action()
             onClose()
         }
-    }, [ navigate, onClose ])
+    }, [ navigate, onClose ]) */
 
     const { currentUser } = getAuth()
+
+    const renderMenuAluno = () => {
+        return (
+            <List
+				component="nav"
+				aria-labelledby="nested-list-subheader"
+				sx={{
+                    width: 300,
+                }}
+			>
+				<ListItemButton onClick={() => setOpenItem(!openItem)}>
+					<ListItemIcon>
+                        <ListIcon />
+					</ListItemIcon>
+					<ListItemText primary="Atividades" />
+					{openItem ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+				</ListItemButton>
+
+				<Collapse in={openItem} timeout="auto" unmountOnExit>
+					<List component="div" disablePadding>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/send-activity')}>
+                            <ListItemText primary="Submeter Atividades" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/progress')}>
+                            <ListItemText primary="Listar Atividades" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/modalities')}>
+                            <ListItemText primary="Visualizar Situação" />
+                        </ListItemButton>
+					</List>
+				</Collapse>
+
+                <ListItemButton onClick={() => navigate('/modalities')}>
+                    <ListItemIcon color='red'>
+                        <RuleIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={'Regulamentos'} />
+                </ListItemButton>
+
+                <ListItemButton onClick={() =>  showDialog('exit')}>
+                    <ListItemIcon color='red'>
+                        <LogoutIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={'Sair'} />
+                </ListItemButton>
+               
+			</List>
+        )
+    }
+
+    const renderMenuAdmin = () => {
+        return (
+            <List
+                component="nav"
+                aria-labelledby="nested-list-subheader"
+                sx={{
+                    width: 300,
+                }}
+            >
+                <ListItemButton onClick={() => setOpenItem(!openItem)}>
+                    <ListItemIcon>
+                        <ListIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Atividades" />
+                    {openItem ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </ListItemButton>
+
+                <Collapse in={openItem} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/send-activity')}>
+                            <ListItemText primary="Submeter Atividades" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/progress')}>
+                            <ListItemText primary="Listar Atividades" />
+                        </ListItemButton>
+                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/modalities')}>
+                            <ListItemText primary="Visualizar Situação" />
+                        </ListItemButton>
+                    </List>
+                </Collapse>
+
+                <ListItemButton onClick={() => navigate('/modalities')}>
+                    <ListItemIcon color='red'>
+                        <RuleIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={'Regulamentos'} />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => showDialog('exit')}>
+                    <ListItemIcon color='red'>
+                        <LogoutIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={'Sair'} />
+                </ListItemButton>
+           
+            </List>
+        )
+    }
 
     return (
         <Drawer anchor='left' open={open} onClose={onClose}>
@@ -98,22 +196,7 @@ function Menu({ open, onClose }) {
                 <Avatar alt='foto do usuário' src={currentUser.photoURL}/>
                 <Typography px={1} fontSize='1.3rem' color="#fff">{currentUser.displayName}</Typography>
             </Stack>
-            <Divider/>
-            <List>
-                {items.current.map(item => (
-                    <ListItem
-                        key={item.text}
-                        disablePadding
-                    >
-                        <ListItemButton onClick={onItemClick(item)}>
-                            <ListItemIcon
-                                color='red'
-                            >{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.text} />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
-            </List>
+            {userInfo.type === UserType.COMMON ? renderMenuAluno() : renderMenuAdmin()}
         </Drawer>
     )
 }
