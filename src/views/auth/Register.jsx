@@ -127,7 +127,6 @@ export default function Register() {
 				promoteData = await getDoc(promoteListRef)
 			}
 
-
 			let user
 			try {
 				user = await createUser(getAuth(), email, password).then(({ user }) => user)
@@ -141,7 +140,7 @@ export default function Register() {
 			const newDoc = {
 				name,
 				registry: registry.value,
-				type: promoteData?.exists() ? UserType.MODERATOR : UserType.COMMON
+				type: promoteData?.exists() || isModerationRegister ? UserType.MODERATOR : UserType.COMMON
 			}
 
 			if (isModerationRegister) 
