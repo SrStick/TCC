@@ -140,7 +140,7 @@ export function useTaskQuery(options) {
 
 function formatDate(timestemp, showTime) {
 	const date = timestemp.toDate()
-	const [ dateString, time ] = date.toLocaleString().split(' ')
+	const [ dateString, time ] = date.toLocaleString().split(', ')
 	const [ hours, minutes ] = time.split(':')
 	return !showTime ? dateString : `${dateString} ${hours}:${minutes}` 
 }
