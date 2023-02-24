@@ -20,7 +20,8 @@ function MainLayout() {
 	const [ promoteDialogIsOpen, setPromoteDialogIsOpen ] = useState(false)
 	const [ toPromoteEmail, setToPromoteEmail ] = useState('')
 
-	const showDialog = useCallback((name, visible = true) => {
+	const showDialog = useCallback((name, visible = true) => {	
+
 		let fn
 		switch (name) {
 			case 'exit': fn = setExitDialogIsOpen; break
