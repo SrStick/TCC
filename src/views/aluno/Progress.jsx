@@ -28,7 +28,7 @@ function toCard({ id, userTime, progress, modality: { description, limit } }) {
 function ProgressView() {
 	const p = useTimeGetter()
 
-	const totalUserTime = useMemo(() => p.data.map(data => data.userTime).reduce((a, b) => a + b), [ p.data ])
+	const totalUserTime = useMemo(() => !p.data ? 0 : p.data.map(data => data.userTime).reduce((a, b) => a + b), [ p.data ])
 	
 	const totalProgress = useMemo(() => {
 		if(p.data) {
@@ -41,18 +41,18 @@ function ProgressView() {
 
 	return (
 		<Stack rowGap={5}>
-			<Stack direction='column'>
-				<Stack>
-					<Typography component='h3' textTransform='capitalize'>horas nescessárias</Typography>
-					<Typography component='span' textTransform='capitalize'>360</Typography>
+			<Stack direction='row' justifyContent='flex-end' columnGap={2}>
+				<Stack alignItems='center'>
+					<Typography component='h3' fontSize='1.5rem' textTransform='capitalize'>horas nescessárias</Typography>
+					<Typography fontSize='2rem' component='span' textTransform='capitalize'>360</Typography>
 				</Stack>
-				<Stack>
-					<Typography component='h3' textTransform='capitalize'>horas cumpridas</Typography>
-					<Typography component='span' textTransform='capitalize'>{360 - totalUserTime}</Typography>
+				<Stack alignItems='center'>
+					<Typography omponent='h3' fontSize='1.5rem' textTransform='capitalize'>horas restantes</Typography>
+					<Typography fontSize='2rem' component='span' textTransform='capitalize'>{360 - totalUserTime}</Typography>
 				</Stack>
-				<Stack>
-					<Typography component='h3' textTransform='capitalize'>horas cumpridas</Typography>
-					<Typography component='span' textTransform='capitalize'>{totalUserTime}</Typography>
+				<Stack alignItems='center'>
+					<Typography omponent='h3' fontSize='1.5rem' textTransform='capitalize'>horas cumpridas</Typography>
+					<Typography fontSize='2rem' component='span' textTransform='capitalize'>{totalUserTime}</Typography>
 				</Stack>
 			</Stack>
 			<TableContainer component={Paper}>
@@ -84,7 +84,7 @@ function ProgressView() {
 					flexDirection: "column",
 				}}
 			>
-				{p.data && p.data.map(toCard)}
+				{p.data && p.data.filter(date => date.userTime).map(toCard)}
 			</Box>
 
 			<Stack
