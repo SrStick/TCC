@@ -21,7 +21,7 @@ import { UserType, useUser } from '../helper/firebase';
 import { putToggle } from '../helper/short-functions';
 
 
-function Menu({ open, onClose }) {
+function MDrawer({ open, onClose }) {
     const navigate = useNavigate()
     const showDialog = useShowDialog()
 
@@ -154,4 +154,4 @@ function Menu({ open, onClose }) {
 
 
 
-export default Menu
+export default MDrawer
