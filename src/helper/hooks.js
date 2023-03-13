@@ -79,7 +79,9 @@ export function useTextPatterns(...filters) {
 		})
 	}, [])
 	
-	return { value: fieldValue, onChange }
+	const clearValue = useCallback(() => setFieldValue(''), [])
+	
+	return { value: fieldValue, onChange, clearValue }
 }
 
 export const PatternFunctions = {

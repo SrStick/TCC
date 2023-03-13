@@ -55,11 +55,12 @@ function MainLayout() {
 						spacing={2}
 					>
 						<Link to={'/'}><HomeIcon /></Link>
-						{ user.type !== UserType.COMMON ?
+						{ user.type === UserType.ADMIN &&
 							<>
 								<Link to={'/modalities'}>Modalidades</Link>
 							</>
-							:
+						}
+						{user.type === UserType.COMMON &&
 							<>
 								<Link sx={{ display: 'flex', alignItems: 'center' }} to={'/send-activity'}>
 									<AddIcon sx={{ mr: 1 }} /><span>Nova Atividade</span>

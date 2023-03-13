@@ -1,4 +1,4 @@
-import { InfoDialog, PasswordField } from '../../components'
+import { InfoDialog } from '../../components'
 import {
 	Button, Dialog,
 	DialogActions, DialogContent,
@@ -6,7 +6,7 @@ import {
 	Slide, TextField,
 	Tooltip, Typography,
 	Skeleton, InputAdornment,
-	Card, FormControl,
+	FormControl,
 	MenuItem, InputLabel, Select
 } from "@mui/material"
 import { useState, useRef, useCallback, forwardRef, useEffect, useMemo } from "react";
@@ -28,82 +28,15 @@ import Paper from '@mui/material/Paper';
 import Toolbar from '@mui/material/Toolbar';
 
 /* FIREBASE */
-import { Collections, useTaskQuery, getUserID, Status, useUser, UserType } from '../../helper/firebase';
-import { doc, getFirestore, increment, setDoc, Timestamp, updateDoc, deleteField } from 'firebase/firestore';
+import { Collections, useTaskQuery, getUserID, Status, useUser } from '../../helper/firebase';
+import { doc, getFirestore, increment, setDoc, Timestamp, updateDoc, deleteField, where } from 'firebase/firestore';
 import { PatternFunctions, useTextPatterns } from '../../helper/hooks';
 import { someEmpty, putEventTargetValue } from '../../helper/short-functions';
-import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import ChangePasswordPanel from '../../components/ChangePasswordPanel';
 
 const SlideTransition = forwardRef((props, ref) => 
 	<Slide direction="up" ref={ref} {...props} />
 )
-
-function ChangePasswordPanel() {
-	const [ newPasswordIsVisible, setNewPasswordIsvisible ] = useState(false)
-	const [ oldPassword, setOldPassword ] = useState('')
-	const [ newPassword, setNewPassword ] = useState('')
-	const [ confimation, setConfimation ] = useState('')
-	const [ errorMessage, setErrorMesssage ] = useState()
-	const [ success, setSuccess ] = useState(false)
-	const [ closed, setClosed ] = useState(false)
-
-	async function send({ target }) {
-		if(newPassword != confimation)
-			setErrorMesssage('a nova senha não é igual a sua confirmação')
-			else {
-				target.disabled = true
-				const user = getAuth().currentUser
-				const credential = EmailAuthProvider.credential(user.email, oldPassword)
-				try {
-					const { authUser } = await reauthenticateWithCredential(user, credential)
-					await updatePassword(authUser, newPassword)
-					setSuccess(true)
-					setTimeout(() => setClosed(true), 1000 * 2)
-				} catch(err) {
-					if(err.code)
-						setErrorMesssage('senha atual incorreta')
-				console.log(err.toString())
-			}
-		}
-	}
-
-	if(closed)
-		return null
-
-	if(success)
-		return (
-			<Card color='success'>
-				<Typography>Senha alterada com sucesso</Typography>
-			</Card>
-		)
-
-	return (
-		<div className='flex-col-center'>
-			<Card sx={{ display: 'flex', flexDirection: 'column', px: 5, py: 2, mb: 2, rowGap: 2 }}>
-				<Typography variant='h6'>Altere sua senha</Typography>
-				<PasswordField
-					label='Senha atuel'
-					value={oldPassword}
-					onChange={putEventTargetValue(setOldPassword)}
-				/>
-				<PasswordField
-					label='Nova senha'
-					value={newPassword}
-					onChange={putEventTargetValue(setNewPassword)}
-					onChangeVisibility={setNewPasswordIsvisible}
-				/>
-				<TextField
-					label='Confirmar nova senha'
-					value={confimation}
-					type={newPasswordIsVisible ? 'text' : 'password'}
-					onChange={putEventTargetValue(setConfimation)}
-				/>
-				{errorMessage && <Typography fontSize='italic' color='error'>{errorMessage}</Typography>}
-				<Button disabled={someEmpty(oldPassword, newPassword, confimation)} onClick={send}>Alterar senha</Button>
-			</Card>
-		</div>
-	)
-}
 
 const ShadowRows = () => {
 	const rows = []
@@ -128,8 +61,11 @@ function AdminHome() {
 	const [ openStatusChange, setOpenStatusChange ] = useState(false)
 	const [ rejectCurrentTask, setRejectCurrentTask ] = useState(false)
 	const [ filter, setFilter ] = useState('all')
+	const [ showFeedback, setShowFeedback ] = useState(false)
 
-	const tasks = useTaskQuery()
+	const tasks = useTaskQuery({
+		constranints: [ where('status', '==', Status.EM_ANALISE), where('reply.uid', '==', getUserID()) ]
+	})
 	const user = useUser()
 
 	const visibleTasks = useMemo(() => {
@@ -143,7 +79,7 @@ function AdminHome() {
 
 	const comments = useTextPatterns(PatternFunctions.limit(200))
 
-	const isFirstAccessOfModerator = useRef(user.type === UserType.MODERATOR && user.info.firstAccess)
+	const isFirstAccessOfModerator = useRef(user.info.firstAccess)
 	
 	useEffect(() => {
 		if(isFirstAccessOfModerator.current) {
@@ -152,6 +88,14 @@ function AdminHome() {
 	}, [ user ])
 
 	const replyHours = useTextPatterns(PatternFunctions.onlyNumbers)
+
+	const closeStatusChangeDialog = useCallback(() => {
+		setRejectCurrentTask(false)
+		setOpenStatusChange(false)
+		setShowFeedback(false)
+		replyHours.clearValue()
+		comments.clearValue()
+	}, [comments, replyHours])
 
 	const sendReply = useCallback(status => {
 		const firestore = getFirestore()
@@ -186,13 +130,11 @@ function AdminHome() {
 			asyncActions.push(setDoc(currentModalityUserTime, { total: increment(reply.hours) }))
 		}
 
-	return Promise.all(asyncActions) 
-	}, [ user.info.name, replyHours.value, visibleTasks, clickedIndex, comments.value ])
-
-	const closeStatusChangeDialog = useCallback(() => {
-		setRejectCurrentTask(false)
-		setOpenStatusChange(false)
-	}, [])
+	return Promise.all(asyncActions).then(() => {
+		setShowFeedback(true)
+		setTimeout(closeStatusChangeDialog, 5 * 1000)
+	})
+	}, [user.info.name, replyHours.value, visibleTasks, clickedIndex, comments.value, closeStatusChangeDialog ])
 
 	const rendererRows = useCallback(() => {
 
@@ -295,11 +237,19 @@ function AdminHome() {
 							<TextField onChange={comments.onChange}  multiline minRows={3} />
 						</>
 					}
+
+					<Typography
+						px={2}
+						py={1}
+						color='#fff'
+						bgcolor='success.main'
+						display={showFeedback ? 'block': 'none'}
+					>Alteração bem sucedida</Typography>
 				</DialogContent>
 				<DialogActions>
 					<Button
 						color="neutral"
-						sx={{ mr: 'auto' }}
+						sx={{ mr: "auto" }}
 						onClick={closeStatusChangeDialog}
 					>Voltar</Button>
 
@@ -313,7 +263,6 @@ function AdminHome() {
 								setRejectCurrentTask(true)
 							} else {
 								sendReply(Status.NEGADO)
-								closeStatusChangeDialog()
 							}
 						}}
 					>{rejectCurrentTask ? 'Confirmar' : 'Rejeitar'}</Button>
@@ -325,7 +274,6 @@ function AdminHome() {
 							disabled={someEmpty(replyHours.value)}
 							onClick={() => {
 								sendReply(Status.COMPUTADO)
-								closeStatusChangeDialog()
 							}}
 						>Confirmar</Button>
 					}

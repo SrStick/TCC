@@ -1,8 +1,7 @@
-import React from 'react'
 import { Avatar, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material'
-import { useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { getAuth } from 'firebase/auth';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
 import Typography from '@mui/material/Typography';
@@ -10,11 +9,7 @@ import ListIcon from '@mui/icons-material/List';
 import SourceIcon from '@mui/icons-material/Source';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PeopleIcon from '@mui/icons-material/People';
-import RuleIcon from '@mui/icons-material/Rule';
-import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
-import BeenhereIcon from '@mui/icons-material/Beenhere';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -23,76 +18,16 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { useShowDialog } from '../helper/dialog-state-holders';
 import { UserType, useUser } from '../helper/firebase';
+import { putToggle } from '../helper/short-functions';
 
 
 function Menu({ open, onClose }) {
     const navigate = useNavigate()
     const showDialog = useShowDialog()
-    const items = useRef([
-        {
-            text: 'Progresso',
-            to: '/progress',
-            icon: <BeenhereIcon/>
-        },
-        {
-            text: 'Atividades',
-            to: '/',
-            icon: <ListIcon />
-        },
-        {
-            text: 'Modalidades',
-            to: '/modalities',
-            icon: <ListAltIcon />
-        },
-        {
-            text: 'Regulamentos',
-            to: '/',
-            icon: <RuleIcon />
-        },
-        {
-            text: 'Cadastrar Moderador',
-            to: '/new-moderator',
-            icon: <SupervisorAccountIcon />
-        },
-        {
-            text: 'Sair',
-            icon: <LogoutIcon />,
-            action: showDialog('exit')
-        }
-    ])
 
     const userInfo = useUser()
-    const [openUsers, setOpenUsers] = React.useState(false);
-    const [openActivities, setOpenActivities] = React.useState(false);
-
-    useEffect(() => {
-        function remove(to) {
-            const itemsValue = items.current
-            const position = itemsValue.findIndex(item => item.to === to)
-            if(position != -1)
-                itemsValue.splice(position, 1)
-        }
-
-        if(userInfo.type === UserType.COMMON) {
-            remove('/modalities')
-            remove('/new-moderator')
-        } else if (userInfo.type === UserType.ADMIN) {
-            remove('/progress')
-        } else {
-            remove('/progress')
-            remove('/new-moderator')
-        }
-    }, [ userInfo ])
-
-    /* const onItemClick = useCallback(({ to, action }) => {
-        return () => {
-            if(to)
-                navigate(to)
-            else
-                action()
-            onClose()
-        }
-    }, [ navigate, onClose ]) */
+    const [ openUsers, setOpenUsers ] = useState(false);
+    const [ openActivities, setOpenActivities ] = useState(false)
 
     const { currentUser } = getAuth()
 
@@ -105,7 +40,7 @@ function Menu({ open, onClose }) {
                     width: 300,
                 }}
 			>
-				<ListItemButton onClick={() => setOpenActivities(!openActivities)}>
+				<ListItemButton onClick={putToggle(setOpenActivities)}>
 					<ListItemIcon>
                         <ListIcon />
 					</ListItemIcon>
@@ -127,7 +62,7 @@ function Menu({ open, onClose }) {
 					</List>
 				</Collapse>
 
-                <ListItemButton onClick={() => getDownloadURL(ref(getStorage(), 'ppc.pdf')).then(link => window.open(link, '_blank'))}>
+                <ListItemButton component='a' target='_blank' href='https://firebasestorage.googleapis.com/v0/b/tcc-extra.appspot.com/o/ppc.pdf?alt=media&token=ba17e7cf-518d-4756-bef3-617efc8debfb'>
                     <ListItemIcon color='red'>
                         <DescriptionIcon />
                     </ListItemIcon>
@@ -140,7 +75,6 @@ function Menu({ open, onClose }) {
                     </ListItemIcon>
                     <ListItemText primary={'Sair'} />
                 </ListItemButton>
-               
 			</List>
         )
     }
@@ -154,39 +88,41 @@ function Menu({ open, onClose }) {
                     width: 300,
                 }}
             >
+                { userInfo.type === UserType.ADMIN &&
+                <>
+                    <ListItemButton onClick={putToggle(setOpenUsers)}>
+                        <ListItemIcon>
+                            <PeopleIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Usuários" />
+                        {openUsers ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    </ListItemButton>
 
-                <ListItemButton onClick={() => setOpenUsers(!openUsers)}>
-                    <ListItemIcon>
-                        <PeopleIcon />
-                    </ListItemIcon>
-                    <ListItemText primary="Usuários" />
-                    {openUsers ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                </ListItemButton>
+                    <Collapse in={openUsers} timeout="auto" unmountOnExit>
+                        <List component="div" disablePadding>
+                            <ListItemButton sx={{ paddingLeft: 5 }} component={Link} to='new-moderator'>
+                                <ListItemText primary="Adicionar colaborador" />
+                            </ListItemButton>
+                        </List>
+                    </Collapse>
+                </>
+                }
 
-                <Collapse in={openUsers} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('new-moderator')}>
-                            <ListItemText primary="Adicionar colaborador" />
-                        </ListItemButton>
-                        <ListItemButton sx={{ paddingLeft: 5 }} onClick={() => navigate('/')}>
-                            <ListItemText primary="Listar colaboradores" />
-                        </ListItemButton>
-                    </List>
-                </Collapse>
-
-                <ListItemButton onClick={() => navigate('/')}>
+                <ListItemButton component={Link} to='/'>
                     <ListItemIcon color='red'>
                         <ListIcon />
                     </ListItemIcon>
                     <ListItemText primary={'Atividades'} />
                 </ListItemButton>
 
-                <ListItemButton onClick={() => navigate('/modalities')}>
-                    <ListItemIcon color='red'>
-                        <SourceIcon />
-                    </ListItemIcon>
-                    <ListItemText primary={'Modalidades'} />
-                </ListItemButton>
+                { userInfo.type === UserType.ADMIN &&
+                    <ListItemButton component={Link} to='/modalities'>
+                        <ListItemIcon color='red'>
+                            <SourceIcon />
+                        </ListItemIcon>
+                        <ListItemText primary={'Modalidades'} />
+                    </ListItemButton>
+                }
 
                 <ListItemButton onClick={() => getDownloadURL(ref(getStorage(), 'ppc.pdf')).then(link => window.open(link, '_blank'))}>
                     <ListItemIcon color='red'>
@@ -201,7 +137,6 @@ function Menu({ open, onClose }) {
                     </ListItemIcon>
                     <ListItemText primary={'Sair'} />
                 </ListItemButton>
-           
             </List>
         )
     }

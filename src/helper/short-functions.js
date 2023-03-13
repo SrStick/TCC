@@ -16,3 +16,7 @@ export function percentCalc(currentValue, totalValue) {
 export function someEmpty(...values) {
 	return values.some(v => v.trim() === '')
 }
+
+export function captalize(string) {
+	return string.split(/ +/).map(word => word[0].toUpperCase() + word.substring(1))
+}

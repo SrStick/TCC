@@ -18,6 +18,7 @@ import StudentHome from "./views/aluno/Home"
 const SendActivity = lazy(() => import('./views/aluno/SendActivity'))
 const Progress = lazy(() => import('./views/aluno/Progress'))
 const Modality = lazy(() => import('./views/coordenador/Modalities'))
+const Profile = lazy(() => import('./views/Profile'))
 
 const UserProvider = UserContext.Provider
 
@@ -110,6 +111,8 @@ console.log(userRef.current);
 						<Route path='/' element={<MainLayout/>}>
 							{renderExtraRoutes(userRef.current.type)}
 							<Route index element={userRef.current.type !== 'common' ? <CoordenadorHome/> : <StudentHome/>}/>
+							<Route
+								path='/profile' element={<Profile/>} />
 						</Route>
 						<Route path='*' element={<Error404/>}/>
 					</Routes>

@@ -127,9 +127,9 @@ function SendActivity() {
 		<>
 			<Stack alignItems='center' spacing={2}>
 				<FormControl sx={{ width: '400px' }}>
-					<InputLabel>Modalidade</InputLabel>
+					<InputLabel>Grupo</InputLabel>
 					<Select
-						label="Modalidade"
+						label="Grupo"
 						onChange={putEventTargetValue(setModalityId)}
 						value={modalityId}
 					>

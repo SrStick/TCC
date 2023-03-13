@@ -13,7 +13,7 @@ import { where } from "firebase/firestore";
 
 
 function CommumUserHome() {
-	const {data : tasks } = useTaskQuery({
+	const { data : tasks } = useTaskQuery({
 		constraints: [ where('author.uid', '==', getUserID()) ],
 		foreach: task => delete task.author,
 	})

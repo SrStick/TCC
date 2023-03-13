@@ -79,8 +79,7 @@ export function useTaskQuery(options) {
 	const [ isLoading, setIsLoading ] = useState(true)
 
 	useEffect(() => {
-		const { collection, getFirestore, query, limit, startAfter, orderBy, onSnapshot, where } = Firestore
-		const tasksCollection = collection(getFirestore(), Collections.TASKS)
+		const { limit, startAfter, orderBy, onSnapshot, where } = Firestore
 		const startConstraints = [ orderBy('date', 'desc'), limit(20) ]
 
 		const hasFilter = filterByStatus !== 'all'
@@ -96,7 +95,7 @@ export function useTaskQuery(options) {
 		const options = optionsRef.current
 		const userConstraints = options?.constraints ?? []
 		
-		const q = query(tasksCollection, ...startConstraints.concat(userConstraints))
+		const q = buildQuery(Collections.TASKS, ...startConstraints.concat(userConstraints))
 		
 		return onSnapshot(q, snap => {
 			const { foreach } = options || {}
@@ -164,17 +163,16 @@ export function useTimeGetter() {
 	
 
 	useEffect(() => {
-		const { collection, query, getFirestore, getDocs, getDoc, doc, limit, limitToLast, endBefore, startAfter } = Firestore
-		const modalitiesRef = collection(getFirestore(), Collections.MODALITIES)
+		const { getFirestore, getDocs, getDoc, doc, limit, limitToLast, endBefore, startAfter } = Firestore
 		const pageSize = 15
 		let q
 
 		if(lastMove.current === 1)
-			q = query(modalitiesRef, startAfter(limits.last), limit(pageSize))
+			q = buildQuery(Collections.MODALITIES, startAfter(limits.last), limit(pageSize))
 		else if(lastMove.current === -1)
-			q = query(modalitiesRef, endBefore(limits.first), limitToLast(pageSize))
+			q = buildQuery(Collections.MODALITIES, endBefore(limits.first), limitToLast(pageSize))
 		else
-			q = query(modalitiesRef, limit(pageSize))
+			q = buildQuery(Collections.MODALITIES, limit(pageSize))
 
 		getDocs(q).then(async ({ docs }) => {
 			// items de subcoleções diferentes podem ter o mesmo id 
@@ -209,3 +207,64 @@ export function useTimeGetter() {
 
 	return { data: progresData, move }
 }
+
+function buildQuery(collectionName, ...constraints) {
+	const { collection, getFirestore, query } = Firestore
+	const c = collection(getFirestore(), collectionName)
+	return query(c, ...constraints)
+}
+
+// export function useTimeGetterV2() {
+// 	const tasks = useTaskQuery({
+// 		constraints: [
+// 			where('author.uid', '==', getUserID()),
+// 			where('status', '==', Status.COMPUTADO)
+// 		]
+// 	})
+
+// 	return useMemo(() => {
+
+// 		if(tasks.isLoading)
+// 			return []
+
+// 		console.time('calcProgress')
+// 		const modMap = tasks.data.reduce((uniqueMods, { modality }) => {
+// 			if(!uniqueMods.has(modality.id)) {
+// 				uniqueMods.set(modality.id, modality)
+// 			}
+// 			return uniqueMods
+// 		}, new Map())
+
+// 		const totalPerMod = tasks.data.reduce((modInfo, currentTask) => {
+// 			const currentModality = currentTask.modality
+// 			const currentTaskHours = currentTask.reply.hours
+// 			const info = modInfo.get(currentModality.id)
+
+			
+// 			if(info) {
+// 				const userTime = info.userTime + currentTaskHours
+// 				modInfo.set(currentModality.id, userTime)
+// 			} else {
+// 				modInfo.set(currentModality.id, currentTaskHours)
+// 			}
+
+// 			return modInfo
+// 		}, new Map())
+
+// 		const result = []
+// 		let tempId = 0
+		
+// 		for (const [ modID, mod ] of modMap) {
+// 			const userTime = totalPerMod.get(modID)
+// 			result.push({
+// 				id: tempId++,
+// 				userTime,
+// 				progress: Math.floor(userTime / mod.limit * 100),
+// 				modality: mod
+// 			})
+// 		}
+// 		console.timeEnd('calcProgress')
+// 		console.log(result);
+// 		return result
+// 	}, [ tasks ])
+// }

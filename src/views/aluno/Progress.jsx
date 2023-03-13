@@ -1,24 +1,17 @@
-import { Box, LinearProgress, Paper, Stack, Typography } from "@mui/material"
+import { Box, LinearProgress, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material"
 import { useMemo } from "react"
 import { CircularProgressWithLabel } from '../../components'
 import { useTimeGetter } from "../../helper/firebase"
-
-function limitTitle(text) {
-	const limit = 35
-	if(text.length > limit)
-		return text.substring(0, limit - 3) + '...'
-	return text
-}
 
 function toCard({ id, userTime, progress, modality: { description, limit } }) {
 	return (
 		<Paper
 			key={id}
 			className="flex-col-center"
-			sx={{ justifyContent: "space-around" }}
+			sx={{ justifyContent: "space-around", p: 1 }}
 			elevation={3}
 		>
-			<Typography textAlign='center' variant="h5">{limitTitle(description)}</Typography>
+			<Typography textAlign='center' variant="h5" noWrap={false}>{description}</Typography>
 			<div className="flex-col-center">
 				<CircularProgressWithLabel size={'4rem'} value={progress} />
 				<div>
@@ -34,52 +27,90 @@ function toCard({ id, userTime, progress, modality: { description, limit } }) {
 
 function ProgressView() {
 	const p = useTimeGetter()
+
+	const totalUserTime = useMemo(() => p.data.map(data => data.userTime).reduce((a, b) => a + b), [ p.data ])
 	
 	const totalProgress = useMemo(() => {
 		if(p.data) {
-			const progress = p.data.map(data => data.userTime).reduce((a, b) => a + b)
-			return Math.floor(progress / 360 * 100)
+			return Math.floor(totalUserTime / 360 * 100)
 		}
 		return 0
-	}, [ p.data ])
+	}, [ p.data, totalUserTime ])
 
 	const progessColor = totalProgress < 100 ? 'neutral' : 'success'
-	return (
-		<Box sx={{
-			display: { sm: 'flex', md: 'grid' },
-			gridTemplateColumns: 'repeat(3, 1fr)',
-			gap: '1ch',
-			flexDirection: 'column'
 
-		}}
-		>
-			{ p.data && p.data.map(toCard) }
-			<Stack
+	return (
+		<Stack rowGap={5}>
+			<Stack direction='column'>
+				<Stack>
+					<Typography component='h3' textTransform='capitalize'>horas nescessárias</Typography>
+					<Typography component='span' textTransform='capitalize'>360</Typography>
+				</Stack>
+				<Stack>
+					<Typography component='h3' textTransform='capitalize'>horas cumpridas</Typography>
+					<Typography component='span' textTransform='capitalize'>{360 - totalUserTime}</Typography>
+				</Stack>
+				<Stack>
+					<Typography component='h3' textTransform='capitalize'>horas cumpridas</Typography>
+					<Typography component='span' textTransform='capitalize'>{totalUserTime}</Typography>
+				</Stack>
+			</Stack>
+			<TableContainer component={Paper}>
+				<Table sx={{ minWidth: 650 }}>
+					<TableHead>
+						<TableRow>
+							<TableCell>Grupos</TableCell>
+							<TableCell>Limite de Aproveitamento</TableCell>
+							<TableCell>Total Aproveitado</TableCell>
+						</TableRow>
+					</TableHead>
+					<TableBody>
+						{p.data && p.data.map(({ modality: { id, limit, description }, userTime }) =>
+							<TableRow key={id}>
+								<TableCell>{description}</TableCell>
+								<TableCell>{limit}</TableCell>
+								<TableCell>{userTime}</TableCell>
+							</TableRow>
+						)}
+					</TableBody>
+				</Table>
+			</TableContainer>
+
+			<Box
 				sx={{
-					gridColumnEnd: 'span 3',
-					flexDirection: 'row',
-					alignItems: 'center',
-					columnGap: 1
+					display: { sm: "flex", md: "grid" },
+					gridTemplateColumns: "repeat(3, 1fr)",
+					gap: "1ch",
+					flexDirection: "column",
 				}}
 			>
-			<Typography
-				color={progessColor}
-				fontSize={'1.5rem'}
-			>Progresso total</Typography>
+				{p.data && p.data.map(toCard)}
+			</Box>
 
-			<LinearProgress
-				variant="determinate"
-				color={progessColor}
-				sx={{ height: 10, flex: 1 }}
-				value={totalProgress}
-			/>
+			<Stack
+				sx={{
+					gridColumnEnd: "span 3",
+					flexDirection: "row",
+					alignItems: "center",
+					columnGap: 1,
+				}}
+			>
+				<Typography color={progessColor} fontSize={"1.5rem"}>
+					Progresso Total
+				</Typography>
 
-			<Typography
-				color={progessColor}
-				fontSize={'1.5rem'}
-			>{totalProgress}%</Typography>
+				<LinearProgress
+					variant="determinate"
+					color={progessColor}
+					sx={{ height: 10, flex: 1 }}
+					value={totalProgress}
+				/>
+
+				<Typography color={progessColor} fontSize={"1.5rem"}>
+					{totalProgress}%
+				</Typography>
 			</Stack>
-		</Box>
+		</Stack>
 	)
 }
 

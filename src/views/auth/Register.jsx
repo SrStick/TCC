@@ -119,28 +119,20 @@ export default function Register() {
 			if(brokenEmail[1] !== mandatoryPart)
 				throw new ValidationError(`só é possível cadastrar emails institucionais. Ex. aluno@${mandatoryPart}`, 'email')
 
-			let promoteData
-
-			if(!isModerationRegister) {
-				const promoteListRef = doc(getFirestore(), Collections.PROMOTE_LIST, email)
-	
-				promoteData = await getDoc(promoteListRef)
-			}
-
 			let user
 			try {
 				user = await createUser(getAuth(), email, password).then(({ user }) => user)
 			} catch (error) {
 				if (error.code === 'auth/weak-password')
 					throw new ValidationError('a senha deve ter o mínimo de seis caracteres', 'password', error.code)
-				if (error.code === 'auth/email-already-exists')
+				if (error.code === 'auth/email-already-in-use')
 					throw new ValidationError('email já cadastrado', 'email', error.code)
 			}
 
 			const newDoc = {
 				name,
 				registry: registry.value,
-				type: promoteData?.exists() || isModerationRegister ? UserType.MODERATOR : UserType.COMMON
+				type: isModerationRegister ? UserType.MODERATOR : UserType.COMMON
 			}
 
 			if (isModerationRegister) 

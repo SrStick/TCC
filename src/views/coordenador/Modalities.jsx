@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react"
-import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
+import { useEffect, useState, useCallback, useRef } from "react"
+import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, limit, onSnapshot, query, updateDoc, where } from "firebase/firestore"
 import { Collections, extractData } from "../../helper/firebase"
 import { Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material"
 import { Box } from "@mui/material"
@@ -8,7 +8,6 @@ import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import CloseIcon from '@mui/icons-material/Close'
 import { PatternFunctions, useTextPatterns } from "../../helper/hooks"
-import { useRef } from "react"
 import { someEmpty } from "../../helper/short-functions"
 
 function Modality() {
@@ -16,12 +15,22 @@ function Modality() {
 	const [clickedItemIndex, setClickedItemIndex] = useState(null)
 	const [formIsOpen, setFormIsOpen] = useState(false)
 	const [deleteDialogIsOpen, setDeleteDialogIsOpen] = useState(false)
+	const [ errorOnDelete, setErrorOnDelete ] = useState(false)
 
 	const deleteAction = useCallback(() => {
 		const { id: docId } = modalities[clickedItemIndex]
-		deleteDoc(doc(getFirestore(), Collections.MODALITIES, docId))
-		setDeleteDialogIsOpen(false)
-	}, [ modalities, clickedItemIndex ])
+
+		const tasksRef = collection(getFirestore(), Collections.TASKS)
+		const q = query(tasksRef, where('modality.id', '==', docId), limit(1))
+		getDocs(q).then(({ empty }) => {
+			if (empty)
+				deleteDoc(doc(getFirestore(), Collections.MODALITIES, docId))
+			else
+				setErrorOnDelete(true)
+
+				setDeleteDialogIsOpen(!errorOnDelete)
+		})
+	}, [ modalities, clickedItemIndex, errorOnDelete ])
 
 	const closeFormDialog = useCallback(() => {
 		setFormIsOpen(false)
@@ -29,7 +38,10 @@ function Modality() {
 	}, [])
 	
 	const openFormDialog = useCallback(() => setFormIsOpen(true), [])
-	const closeDeleteDialog = useCallback(() => setDeleteDialogIsOpen(false), [])
+	const closeDeleteDialog = useCallback(() => {
+		setDeleteDialogIsOpen(false)
+		setErrorOnDelete(false)
+	}, [])
 
 	useEffect(() => {
 		const modalities = collection(getFirestore(), Collections.MODALITIES)
@@ -49,7 +61,7 @@ function Modality() {
 					setClickedItemIndex(null)
 					openFormDialog()
 				}}
-			>Nova Modalidade</Button>
+			>Novo Grupo</Button>
 			<Box mt='10px'>
 				{modalities.map((mod, index) => (
 					<Accordion key={mod.id} onClickCapture={() => setClickedItemIndex(index)}>
@@ -83,7 +95,7 @@ function Modality() {
 
 			</Box>
 			<FormDialog
-				title={ (clickedItemIndex !== null ? 'Editar' : 'Nova') + ' Modalidade' }
+				title={ (clickedItemIndex !== null ? 'Editar' : 'Novo') + ' Grupo' }
 				open={formIsOpen}
 				data={modalities[clickedItemIndex]}
 				onClose={closeFormDialog}
@@ -93,9 +105,12 @@ function Modality() {
 				open={deleteDialogIsOpen}
 				onClose={closeDeleteDialog}
 			>
-				<DialogTitle>Deseja realmente <b>apagar</b> essa modalidade?</DialogTitle>
+				<DialogTitle>Deseja realmente <b>apagar</b> essa grupo?</DialogTitle>
 				<DialogContent>
-					<DialogContentText>Essa ação não pode ser desfeita!</DialogContentText>
+					<DialogContentText color={errorOnDelete ? 'error' : undefined}>
+						{!errorOnDelete ? 'Essa ação não pode ser desfeita!' :
+							'Não é possível apagar esse grupo pois ele está em uso.'}
+					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
 					<Button color="neutral" onClick={closeDeleteDialog}>Voltar</Button>
@@ -229,7 +244,7 @@ function FormDialog({ open, onClose, title, data }) {
 						)}
 					</Select>
 					<FormHelperText>
-						Informe como essa modalidade será contabilizada.
+						Informe como esse grupo será contabilizada.
 					</FormHelperText>
 				</FormControl>
 				{innerData?.type === types.current.at(-1) &&
