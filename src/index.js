@@ -6,10 +6,11 @@ import { BrowserRouter } from 'react-router-dom'
 
 import { initializeApp } from 'firebase/app'
 
+
 import './css/global.css';
 import App from './App';
 
-import firebaseConfig from './firebaseConfig.json'
+const firebaseConfig = require('./firebaseConfig.json')
 
 initializeApp(firebaseConfig)
 
