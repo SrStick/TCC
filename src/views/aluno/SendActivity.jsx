@@ -133,7 +133,7 @@ function SendActivity() {
 						onChange={putEventTargetValue(setModalityId)}
 						value={modalityId}
 					>
-						<MenuItem value='default'>Escolha uma modalidade</MenuItem>
+						<MenuItem value='default'>Escolha uma grupo</MenuItem>
 						{modalities.map(({ description, id }) =>
 							<MenuItem key={description} value={id}>{description}</MenuItem>
 						)}
@@ -141,7 +141,7 @@ function SendActivity() {
 				</FormControl>
 				{ modiltyIsDefautOnSend && (
 					<Typography fontStyle='italic' color='error'>
-						Selecione uma modalidade
+						Selecione um grupo
 					</Typography>
 				)}
 				<Box sx={{ pt: 3 }}>

@@ -1,7 +1,7 @@
 import {
-	AppBar, Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Link as MuiLink, ListItemIcon, ListItemText, Menu, MenuItem, Stack, TextField, Toolbar
+	AppBar, Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link as MuiLink, ListItemIcon, ListItemText, Menu, MenuItem, Stack, TextField, Toolbar
 } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AddIcon from '@mui/icons-material/Add';
 import HomeIcon from '@mui/icons-material/Home';
@@ -18,11 +18,13 @@ import { getAuth } from 'firebase/auth';
 
 function MainLayout() {
 
-	const [ menuIsOpen, setMenuIsOpen ] = useState(false)
+	const [ drawerIsOpen, setDrawerIsOpen ] = useState(false)
 	const [ exitDialogIsOpen, setExitDialogIsOpen ] = useState(false)
 	const [ promoteDialogIsOpen, setPromoteDialogIsOpen ] = useState(false)
 	const [ toPromoteEmail, setToPromoteEmail ] = useState('')
 	const [ accountMenuAnchor, setAccountMenuAnchor ] = useState()
+
+	const action = useRef()
 
 	const showDialog = useCallback((name, visible = true) => {
 
@@ -30,7 +32,7 @@ function MainLayout() {
 		switch (name) {
 			case 'exit': fn = setExitDialogIsOpen; break
 			case 'promote': fn = setPromoteDialogIsOpen; break
-			case 'menu': fn = setMenuIsOpen
+			case 'drawer': fn = setDrawerIsOpen
 		}
 		return () => fn(visible)
 	}, [])
@@ -40,6 +42,13 @@ function MainLayout() {
 
 	const navigate = useNavigate()
 
+	useEffect(() => {
+		if (!accountMenuAnchor && action.current) {
+			action.current()
+			action.current = null
+		}
+	}, [ accountMenuAnchor ])
+
 	return (
 		<Box>
 			<AppBar position="static">
@@ -48,25 +57,25 @@ function MainLayout() {
 						size="large"
 						edge="start"
 						color="inherit"
-						aria-label="menu"
+						aria-label="drawer-menu"
 						sx={{ mr: 2 }}
-						onClick={showDialog("menu")}
+						onClick={showDialog("drawer")}
 					>
 						<MenuIcon />
 					</IconButton>
 					<Stack
 						letterSpacing={1}
-						direction={"row"}
-						alignItems={"center"}
+						direction="row"
+						alignItems="center"
 						flexGrow={1}
 						spacing={2}
 					>
-						<Link to={"/"}>
+						<Link to="/">
 							<HomeIcon />
 						</Link>
 						{user.type === UserType.ADMIN && (
 							<>
-								<Link to={"/modalities"}>Modalidades</Link>
+								<Link to={"/groups"}>Grupos</Link>
 							</>
 						)}
 						{user.type === UserType.COMMON && (
@@ -99,8 +108,8 @@ function MainLayout() {
 							>
 								<MenuItem
 									onClick={() => {
+										action.current = () => navigate('profile')
 										setAccountMenuAnchor(null)
-										setTimeout(() => navigate('profile'))
 									}}
 								>
 									<ListItemIcon>
@@ -108,7 +117,7 @@ function MainLayout() {
 									</ListItemIcon>
 									<ListItemText>Perfil</ListItemText>
 								</MenuItem>
-								<MenuItem onClick={user.singOut}>
+								<MenuItem onClick={showDialog('exit')}>
 									<ListItemIcon>
 										<LogoutIcon/>
 									</ListItemIcon>
@@ -121,7 +130,7 @@ function MainLayout() {
 			</AppBar>
 
 			<DialogContext.Provider value={showDialog}>
-				<Drawer open={menuIsOpen} onClose={showDialog("menu", false)} />
+				<Drawer open={drawerIsOpen} onClose={showDialog("drawer", false)} />
 				<Box sx={{ m: "20px" }}>
 					<Outlet />
 				</Box>

@@ -1,8 +1,7 @@
-import { Avatar, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material'
-import { useState } from 'react'
+import { Avatar, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material';
+import { useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate, Link } from "react-router-dom";
-import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
 import Typography from '@mui/material/Typography';
 import ListIcon from '@mui/icons-material/List';
@@ -116,15 +115,15 @@ function MDrawer({ open, onClose }) {
                 </ListItemButton>
 
                 { userInfo.type === UserType.ADMIN &&
-                    <ListItemButton component={Link} to='/modalities'>
+                    <ListItemButton component={Link} to='/groups'>
                         <ListItemIcon color='red'>
                             <SourceIcon />
                         </ListItemIcon>
-                        <ListItemText primary={'Modalidades'} />
+                        <ListItemText primary={'Grupos'} />
                     </ListItemButton>
                 }
 
-                <ListItemButton onClick={() => getDownloadURL(ref(getStorage(), 'ppc.pdf')).then(link => window.open(link, '_blank'))}>
+                <ListItemButton component='a' target='_blank' href='https://firebasestorage.googleapis.com/v0/b/tcc-extra.appspot.com/o/ppc.pdf?alt=media&token=ba17e7cf-518d-4756-bef3-617efc8debfb'>
                     <ListItemIcon color='red'>
                         <DescriptionIcon />
                     </ListItemIcon>

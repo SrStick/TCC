@@ -4,7 +4,7 @@ import {
 	getAuth,
 	updateProfile
 } from "firebase/auth";
-import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import { doc, getFirestore, setDoc } from 'firebase/firestore';
 import { useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordField } from "../../components";

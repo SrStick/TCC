@@ -26,8 +26,8 @@ function renderExtraRoutes(type) {
 	if(type === 'common') {
 		return (
 			<>
-				<Route path='send-activity' element={<SendActivity />} />
-				<Route path='progress' element={<Progress />} />
+				<Route path='send-activity' element={<SendActivity/>} />
+				<Route path='progress' element={<Progress/>} />
 			</>
 		)
 	}
@@ -36,14 +36,13 @@ function renderExtraRoutes(type) {
 		return (
 			<>
 				<Route path='new-moderator' element={<Register/>} />
-				<Route path='modalities' element={<Modality />} />
+				<Route path='groups' element={<Modality/>} />
 			</>
 		)
 	}
 	
 
-	return <Route path='modalities' element={<Modality />} />
-
+	return <Route path='groups' element={<Modality/>} />
 }
 
 function App() {
@@ -86,7 +85,7 @@ function App() {
 
 	useEffect(() => userRef.current.subscribe(), [])
 	
-console.log(userRef.current);
+// console.log(userRef.current);
 
 	if (loading)
 		return <Loading />
@@ -111,8 +110,7 @@ console.log(userRef.current);
 						<Route path='/' element={<MainLayout/>}>
 							{renderExtraRoutes(userRef.current.type)}
 							<Route index element={userRef.current.type !== 'common' ? <CoordenadorHome/> : <StudentHome/>}/>
-							<Route
-								path='/profile' element={<Profile/>} />
+							<Route path='/profile' element={<Profile/>} />
 						</Route>
 						<Route path='*' element={<Error404/>}/>
 					</Routes>
@@ -155,7 +153,5 @@ const theme = createTheme({
 		}
 	}
 })
-
-
 
 export default App;
