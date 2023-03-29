@@ -1,10 +1,6 @@
-import Dialog from "@mui/material/Dialog"
-import DialogTitle from "@mui/material/DialogTitle"
-import DialogContent from "@mui/material/DialogContent"
-import { Box, Divider, Slide, Stack, Typography } from "@mui/material"
+import { Dialog, DialogTitle, DialogContent, Box, Divider, Slide, Stack, Typography } from "@mui/material"
 import CheckIcon from '@mui/icons-material/CheckCircle';
 import FlagIcon from '@mui/icons-material/FlagCircle';
-
 import FileView from "./FileView"
 import { forwardRef } from "react"
 import { Status } from "../helper/firebase"

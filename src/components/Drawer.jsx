@@ -1,17 +1,13 @@
-import { Avatar, Drawer, ListItemIcon, ListItemText, Stack, Collapse } from '@mui/material';
+import { Avatar, Drawer, ListItemIcon, ListItemText, Stack, Collapse, Typography, List, ListItemButton  } from '@mui/material';
 import { useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate, Link } from "react-router-dom";
 
-import Typography from '@mui/material/Typography';
 import ListIcon from '@mui/icons-material/List';
 import SourceIcon from '@mui/icons-material/Source';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PeopleIcon from '@mui/icons-material/People';
 import LogoutIcon from '@mui/icons-material/Logout';
-
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 

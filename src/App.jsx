@@ -1,19 +1,20 @@
-import { CircularProgress, createTheme, Stack, ThemeProvider, Typography } from '@mui/material';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { createTheme, ThemeProvider } from '@mui/material';
 import { useEffect, useState, Suspense, lazy, useRef, useCallback } from 'react';
 import { Routes, Route } from 'react-router-dom'
 
-import Login from './views/auth/Login';
-import Register from './views/auth/Register';
-import Error404 from './views/404'
+import Loading from './components/Loading';
+const Login = lazy(() => import('./views/auth/Login'))
+const Register = lazy(() => import('./views/auth/Register'))
+const Error404 = lazy(() => import('./views/404'))
 
 import { getUserInfo, UserContext } from './helper/firebase';
 import { MainLayout } from './components';
 import { useNavigate } from 'react-router-dom'
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 /* HOME */
-import CoordenadorHome from "./views/coordenador/Home"
-import StudentHome from "./views/aluno/Home"
+const StudentHome = lazy(() => import('./views/aluno/Home')) 
+const CoordenadorHome = lazy(() => import('./views/coordenador/Home'))
 
 const SendActivity = lazy(() => import('./views/aluno/SendActivity'))
 const Progress = lazy(() => import('./views/aluno/Progress'))
@@ -72,7 +73,6 @@ function App() {
 				if (user) this.fetchData(fun)
 				else setLoading(false)
 			})
-			return this.unsubscribe
 		},
 		singOut() {
 			inLoadSrean(async () => {
@@ -88,7 +88,11 @@ function App() {
 // console.log(userRef.current);
 
 	if (loading)
-		return <Loading />
+		return (
+			<ThemeProvider theme={theme}>
+				<Loading />
+			</ThemeProvider>
+		)
 	else if (!logged)
 		return (
 			<ThemeProvider theme={theme}>
@@ -120,16 +124,7 @@ function App() {
 	)
 }
 
-const Loading = () => (
-	<ThemeProvider theme={theme}>
-		<Stack alignItems='center'>
-			<Typography variant='h1' fontSize='2rem'>Aguarde</Typography>
-			<CircularProgress />
-		</Stack>
-	</ThemeProvider>
-)
-
-const theme = createTheme({
+export const theme = createTheme({
 	palette: {
 		mode: 'light',
 		primary: {

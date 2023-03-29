@@ -1,5 +1,5 @@
 import { getAuth } from "firebase/auth"
-import * as Firestore from "firebase/firestore"
+import { onSnapshot, getDoc, getDocs, query, collection, where, getFirestore, doc, limitToLast, endBefore, limit, startAfter, orderBy } from "firebase/firestore"
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 
 export const Collections = {
@@ -23,8 +23,8 @@ export const UserType = {
 }
 
 export function getUserInfo() {
-	const path = Firestore.doc(Firestore.getFirestore(), Collections.USERS, getUserID())
-	return Firestore.getDoc(path).then(snap => snap.data())
+	const path = doc(getFirestore(), Collections.USERS, getUserID())
+	return getDoc(path).then(snap => snap.data())
 }
 
 export function getUserID() {
@@ -32,30 +32,9 @@ export function getUserID() {
 }
 
 export async function findUserByEmail(email) {
-	const { getDocs, query, getFirestore, collection, where } = Firestore
 	const userCollections = collection(getFirestore(), Collections.USERS)
 	const q = query(userCollections, where('email', '==', email))
 	return getDocs(q)
-}
-
-export async function promoteUser(email) {
-	const { doc, getFirestore, updateDoc } = Firestore
-	const snap = await findUserByEmail(email)
-	if (!snap.empty) {
-		const metaId = snap.docs.pop()
-		const metaRef = doc(getFirestore(), Collections.USERS, metaId)
-		return updateDoc(metaRef, { type: 'moderator' })
-	}
-	throw new Error('email não encontrado')
-}
-
-export function addEmailToPromoteList(email) {
-	const { getFirestore, setDoc, doc, Timestamp } = Firestore
-	const promoteListRef = doc(getFirestore(), Collections.PROMOTE_LIST, email)
-
-	const sevenDaysLater = new Date()
-	sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
-	setDoc(promoteListRef, { validity: Timestamp.fromDate(sevenDaysLater) })
 }
 
 export const UserContext = createContext()
@@ -79,7 +58,6 @@ export function useTaskQuery(options) {
 	const [ isLoading, setIsLoading ] = useState(true)
 
 	useEffect(() => {
-		const { limit, startAfter, orderBy, onSnapshot, where } = Firestore
 		const startConstraints = [ orderBy('date', 'desc'), limit(20) ]
 
 		const hasFilter = filterByStatus !== 'all'
@@ -163,7 +141,6 @@ export function useTimeGetter() {
 	
 
 	useEffect(() => {
-		const { getFirestore, getDocs, getDoc, doc, limit, limitToLast, endBefore, startAfter } = Firestore
 		const pageSize = 15
 		let q
 
@@ -209,62 +186,6 @@ export function useTimeGetter() {
 }
 
 function buildQuery(collectionName, ...constraints) {
-	const { collection, getFirestore, query } = Firestore
 	const c = collection(getFirestore(), collectionName)
 	return query(c, ...constraints)
 }
-
-// export function useTimeGetterV2() {
-// 	const tasks = useTaskQuery({
-// 		constraints: [
-// 			where('author.uid', '==', getUserID()),
-// 			where('status', '==', Status.COMPUTADO)
-// 		]
-// 	})
-
-// 	return useMemo(() => {
-
-// 		if(tasks.isLoading)
-// 			return []
-
-// 		console.time('calcProgress')
-// 		const modMap = tasks.data.reduce((uniqueMods, { modality }) => {
-// 			if(!uniqueMods.has(modality.id)) {
-// 				uniqueMods.set(modality.id, modality)
-// 			}
-// 			return uniqueMods
-// 		}, new Map())
-
-// 		const totalPerMod = tasks.data.reduce((modInfo, currentTask) => {
-// 			const currentModality = currentTask.modality
-// 			const currentTaskHours = currentTask.reply.hours
-// 			const info = modInfo.get(currentModality.id)
-
-			
-// 			if(info) {
-// 				const userTime = info.userTime + currentTaskHours
-// 				modInfo.set(currentModality.id, userTime)
-// 			} else {
-// 				modInfo.set(currentModality.id, currentTaskHours)
-// 			}
-
-// 			return modInfo
-// 		}, new Map())
-
-// 		const result = []
-// 		let tempId = 0
-		
-// 		for (const [ modID, mod ] of modMap) {
-// 			const userTime = totalPerMod.get(modID)
-// 			result.push({
-// 				id: tempId++,
-// 				userTime,
-// 				progress: Math.floor(userTime / mod.limit * 100),
-// 				modality: mod
-// 			})
-// 		}
-// 		console.timeEnd('calcProgress')
-// 		console.log(result);
-// 		return result
-// 	}, [ tasks ])
-// }

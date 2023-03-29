@@ -1,6 +1,4 @@
-import {
-	AppBar, Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link as MuiLink, ListItemIcon, ListItemText, Menu, MenuItem, Stack, TextField, Toolbar
-} from '@mui/material';
+import { AppBar, Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link as MuiLink, ListItemIcon, ListItemText, Menu, MenuItem, Stack, Toolbar } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AddIcon from '@mui/icons-material/Add';
@@ -10,7 +8,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 import { NavLink as RouterNavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useUser, addEmailToPromoteList, UserType } from '../helper/firebase';
+import { useUser, UserType } from '../helper/firebase';
 import { DialogContext } from '../helper/dialog-state-holders';
 
 import Drawer from './Drawer';

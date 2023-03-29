@@ -4,13 +4,12 @@ import ArticleIcon from '@mui/icons-material/Article';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useTrackUploadProgress } from "../../helper/hooks";
 import { someEmpty, percentCalc, putEventTargetValue } from '../../helper/short-functions'
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, Timestamp } from "firebase/firestore";
 import { Collections, extractData, getUserID, Status, useUser } from "../../helper/firebase";
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
 
 const DESCRIPTION_LIMIT = 300
 
