@@ -47,7 +47,7 @@ export default function ChangePasswordPanel({ hideTitle }) {
 			<Card sx={{ display: 'flex', flexDirection: 'column', px: 5, py: 2, mb: 2, rowGap: 2 }}>
 				{ !hideTitle && <Typography variant='h6'>Altere sua senha</Typography>}
 				<PasswordField
-					label='Senha atuel'
+					label='Senha atual'
 					value={oldPassword}
 					onChange={putEventTargetValue(setOldPassword)} />
 				<PasswordField

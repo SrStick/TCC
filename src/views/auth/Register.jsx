@@ -181,7 +181,7 @@ export default function Register() {
 						component='h1'
 						mb={2}
 						color='error'
-					>Cadastro de Moderadores</Typography>
+					>Cadastro de Colaborador</Typography>
 				</>
 			}
 			<TextField

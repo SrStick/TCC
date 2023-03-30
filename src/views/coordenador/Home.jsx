@@ -6,8 +6,9 @@ import {
 	Slide, TextField,
 	Tooltip, Typography,
 	Skeleton, InputAdornment,
-	FormControl,
-	MenuItem, InputLabel, Select
+	MenuItem, InputLabel,
+	Select, FormControl, Stack,
+	
 } from "@mui/material"
 import { useState, useRef, useCallback, forwardRef, useEffect, useMemo } from "react";
 
@@ -29,7 +30,7 @@ import Toolbar from '@mui/material/Toolbar';
 
 /* FIREBASE */
 import { Collections, useTaskQuery, getUserID, Status, useUser } from '../../helper/firebase';
-import { doc, getFirestore, increment, setDoc, Timestamp, updateDoc, deleteField, where } from 'firebase/firestore';
+import { doc, getFirestore, increment, Timestamp, updateDoc, deleteField, where, runTransaction } from 'firebase/firestore';
 import { PatternFunctions, useTextPatterns } from '../../helper/hooks';
 import { someEmpty, putEventTargetValue } from '../../helper/short-functions';
 import ChangePasswordPanel from '../../components/ChangePasswordPanel';
@@ -62,18 +63,45 @@ function AdminHome() {
 	const [ rejectCurrentTask, setRejectCurrentTask ] = useState(false)
 	const [ filter, setFilter ] = useState('all')
 	const [ showFeedback, setShowFeedback ] = useState(false)
+	const [ sent, setSent ] = useState(false)
 
-	const tasks = useTaskQuery({
-		constranints: [ where('status', '==', Status.EM_ANALISE), where('reply.uid', '==', getUserID()) ]
+	const pendingTasks = useTaskQuery({
+		constraints: [ where('status', '==', Status.EM_ANALISE) ]
 	})
+	const userTasks = useTaskQuery({
+		constraints: [ where('reply.author.uid', '==', getUserID()) ]
+	})
+
+	const tasks = useMemo(() => {
+		const tasks = []
+		
+		if (pendingTasks.isLoading || userTasks.isLoading)
+			return []
+
+		for (let i = 0; i < pendingTasks.data.length; i++) {
+			const pending = pendingTasks.data[i]
+			const usr = userTasks.data[i]
+			if (pending && usr) {
+				if (pending.id === usr.id)
+					tasks.push(usr)
+				else
+					tasks.push(pending, usr)
+			} else if (!pending && usr)
+				tasks.push(usr)
+			else
+				tasks.push(pending)
+			}
+
+			return tasks
+	}, [ pendingTasks, userTasks ])
+
 	const user = useUser()
 
 	const visibleTasks = useMemo(() => {
-		const data = tasks.data
 		if(filter === 'all')
-			return data
+			return tasks
 
-		return data.filter(task => task.status === Status.EM_ANALISE)
+		return tasks.filter(task => task.status === Status.EM_ANALISE)
 	}, [ tasks, filter ])
 
 
@@ -98,6 +126,7 @@ function AdminHome() {
 	}, [comments, replyHours])
 
 	const sendReply = useCallback(status => {
+		setSent(true)
 		const firestore = getFirestore()
 		const currentTask = visibleTasks[clickedIndex]
 		const modalityId = currentTask.modality.id
@@ -122,17 +151,16 @@ function AdminHome() {
 			reply.hours = parseFloat(replyHours.value)
 		}
 
-		const asyncActions = [
-			updateDoc(doc(firestore, Collections.TASKS, currentTask.id), { status, reply })
-		]
+		return runTransaction(firestore, async transition => {
+			transition.update(doc(firestore, Collections.TASKS, currentTask.id), { status, reply })
+			transition.update(doc(firestore, Collections.MODALITIES, modalityId), { canBeDeleted: false })
 
-		if(status === Status.COMPUTADO) {
-			asyncActions.push(setDoc(currentModalityUserTime, { total: increment(reply.hours) }))
-		}
-
-	return Promise.all(asyncActions).then(() => {
+			if(status === Status.COMPUTADO) {
+				transition.set(currentModalityUserTime, { total: increment(reply.hours) })
+			}
+		}).then(() => {
 		setShowFeedback(true)
-		setTimeout(closeStatusChangeDialog, 5 * 1000)
+		setTimeout(closeStatusChangeDialog, 2 * 1000)
 	})
 	}, [user.info.name, replyHours.value, visibleTasks, clickedIndex, comments.value, closeStatusChangeDialog ])
 
@@ -143,7 +171,10 @@ function AdminHome() {
 				<TableCell>{task.description}</TableCell>
 				<TableCell>{task.date}</TableCell>
 				<TableCell>{task.author.name}</TableCell>
-				<TableCell align="center" onClickCapture={() => setClickedIndex(index)}>
+				<TableCell
+					onClickCapture={() => setClickedIndex(index)}
+					sx={{ display: 'flex', flexWrap: 'nowrap', justifyContent: 'center' }}
+				>
 					<Tooltip title="Mais informações">
 						<IconButton color='info' onClickCapture={() => setInfoIsOpen(true)}>
 							<InfoIcon />
@@ -160,7 +191,7 @@ function AdminHome() {
 			</TableRow> 
 		)
 
-		if(tasks.isLoading)
+		if (pendingTasks.isLoading || userTasks.isLoading)
 			return <ShadowRows/>
 
 		if(visibleTasks.length === 0)
@@ -210,15 +241,34 @@ function AdminHome() {
 				</TableContainer>
 			</Paper>
 
-			<Button disabled={!tasks.grownUp()} onClick={() => tasks.next()}>Carregar mais dados</Button>
+			<Button
+				disabled={!pendingTasks.grownUp() && !userTasks.grownUp()}
+				onClick={() => {
+					if (pendingTasks.grownUp())
+						pendingTasks.next()
+					if	(userTasks.grownUp())
+						userTasks.next()
+				}}
+			>Carregar mais dados</Button>
 
 			<Dialog
 				open={openStatusChange}
 				TransitionComponent={SlideTransition}
 				keepMounted
 			>
-				<DialogTitle>Atenção</DialogTitle>
+				<DialogTitle>Avaliação</DialogTitle>
 				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+					<Stack border={1} borderColor='#c4c4c4' rowGap={1} padding={1}>
+						<span>
+							Ganho por envio: {visibleTasks[clickedIndex]?.modality.amount}h
+						</span>
+						<span>
+							Limite: {visibleTasks[clickedIndex]?.modality.limit}h
+						</span>
+						<span>
+							Unidade: {visibleTasks[clickedIndex]?.modality.getTypeDesc()}
+						</span>
+					</Stack>
 					{ !rejectCurrentTask ?
 						<>
 							<Typography>Digite o valor que ele receberá por essa atividade.</Typography>
@@ -233,7 +283,7 @@ function AdminHome() {
 						</>
 						:
 						<>
-							<Typography>Deixe algum comentário para, por exemplo, explicar o motivo.</Typography>
+							<Typography>Descreva o motivo da rejeição do envio desta atividade</Typography>
 							<TextField onChange={comments.onChange}  multiline minRows={3} />
 						</>
 					}
@@ -271,7 +321,7 @@ function AdminHome() {
 						<Button
 							startIcon={ <CheckIcon/> }
 							variant="outlined"
-							disabled={someEmpty(replyHours.value)}
+							disabled={someEmpty(replyHours.value) || sent}
 							onClick={() => {
 								sendReply(Status.COMPUTADO)
 							}}

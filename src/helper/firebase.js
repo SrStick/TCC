@@ -12,7 +12,7 @@ export const Collections = {
 
 export const Status = {
 	EM_ANALISE: 'Em Análise',
-	NEGADO: 'Negado',
+	NEGADO: 'Rejeitada',
 	COMPUTADO: 'Validada'
 }
 
@@ -117,9 +117,14 @@ export function useTaskQuery(options) {
 
 function formatDate(timestemp, showTime) {
 	const date = timestemp.toDate()
-	const [ dateString, time ] = date.toLocaleString().split(', ')
-	const [ hours, minutes ] = time.split(':')
-	return !showTime ? dateString : `${dateString} ${hours}:${minutes}` 
+	const dateString = [ date.getDate(), date.getMonth(), date.getFullYear() ]
+		.map(datePart => datePart < 10 ? '0' + datePart : datePart)
+		.join('/')
+	return !showTime ? dateString : `${dateString} ${date.getHours()}:${date.getMinutes()}`
+
+	// const [ dateString, time ] = date.toLocaleString().split(', ')
+	// const [ hours, minutes ] = time.split(':')
+	// return !showTime ? dateString : `${dateString} ${hours}:${minutes}` 
 }
 
 function TaskFactory(doc) {
@@ -128,6 +133,10 @@ function TaskFactory(doc) {
 	task.date = formatDate(task.date)
 
 	if(task.reply) task.reply.date = formatDate(task.reply.date, true)
+
+	task.modality.getTypeDesc = function() {
+		return this.otherType || this.type
+	}
 
 	return task
 }

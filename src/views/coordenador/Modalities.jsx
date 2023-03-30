@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react"
-import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, limit, onSnapshot, query, updateDoc, where } from "firebase/firestore"
+import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
 import { Collections, extractData } from "../../helper/firebase"
 import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
@@ -7,28 +7,24 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import CloseIcon from '@mui/icons-material/Close'
 import { PatternFunctions, useTextPatterns } from "../../helper/hooks"
 import { someEmpty } from "../../helper/short-functions"
+import FeedbackBox from "../../components/FeedbackBox";
 
 function Modality() {
 	const [modalities, setModalities] = useState([])
 	const [clickedItemIndex, setClickedItemIndex] = useState(null)
 	const [formIsOpen, setFormIsOpen] = useState(false)
 	const [deleteDialogIsOpen, setDeleteDialogIsOpen] = useState(false)
-	const [ errorOnDelete, setErrorOnDelete ] = useState(false)
+	const [ showFeedback, setShowFeedback ] = useState(false)
 
 	const deleteAction = useCallback(() => {
 		const { id: docId } = modalities[clickedItemIndex]
 
-		const tasksRef = collection(getFirestore(), Collections.TASKS)
-		const q = query(tasksRef, where('modality.id', '==', docId), limit(1))
-		getDocs(q).then(({ empty }) => {
-			if (empty)
-				deleteDoc(doc(getFirestore(), Collections.MODALITIES, docId))
-			else
-				setErrorOnDelete(true)
-
-				setDeleteDialogIsOpen(!errorOnDelete)
-		})
-	}, [ modalities, clickedItemIndex, errorOnDelete ])
+		deleteDoc(doc(getFirestore(), Collections.MODALITIES, docId))
+			.then(() => {
+				closeDeleteDialog()
+				setShowFeedback(true)
+			})
+	}, [ modalities, clickedItemIndex ])
 
 	const closeFormDialog = useCallback(() => {
 		setFormIsOpen(false)
@@ -36,10 +32,7 @@ function Modality() {
 	}, [])
 	
 	const openFormDialog = useCallback(() => setFormIsOpen(true), [])
-	const closeDeleteDialog = useCallback(() => {
-		setDeleteDialogIsOpen(false)
-		setErrorOnDelete(false)
-	}, [])
+	const closeDeleteDialog = useCallback(() => setDeleteDialogIsOpen(false), [])
 
 	useEffect(() => {
 		const modalities = collection(getFirestore(), Collections.MODALITIES)
@@ -75,22 +68,27 @@ function Modality() {
 								}}
 							>
 								<Typography component='span'>Tempo Correspondente:</Typography>
-								<Typography component='span' fontWeight='bold'>{mod.correspondingTime}h</Typography>
+								<Typography component='span' fontWeight='bold'>{mod.amount}h</Typography>
 
 								<Typography component='span'>Limite:</Typography>
 								<Typography component='span' fontWeight='bold'>{mod.limit}h</Typography>
 
 								<Typography component='span'>Tipo:</Typography>
-								<Typography component='span' fontWeight='bold'>{mod.type === 'Outro' ? mod.otherType : mod.type}</Typography>
+								<Typography component='span' fontWeight='bold'>{mod.otherType || mod.type}</Typography>
 							</Box>
 							<Stack direction='row' mt={2}>
 								<Button color='secondary' variant="contained" onClick={openFormDialog}>editar</Button>
-								<Button color='error' onClickCapture={() => setDeleteDialogIsOpen(true)}>remover</Button>
+								<Button color='error' disabled={!mod.canBeDeleted} onClickCapture={() => setDeleteDialogIsOpen(true)}>remover</Button>
 							</Stack>
 						</AccordionDetails>
 					</Accordion>
 				))}
 
+				<FeedbackBox
+					visible={showFeedback}
+					setVisible={setShowFeedback}
+					successMessage='Grupo apagado com sucesso'
+				/>
 			</Box>
 			<FormDialog
 				title={ (clickedItemIndex !== null ? 'Editar' : 'Novo') + ' Grupo' }
@@ -105,9 +103,8 @@ function Modality() {
 			>
 				<DialogTitle>Deseja realmente <b>apagar</b> essa grupo?</DialogTitle>
 				<DialogContent>
-					<DialogContentText color={errorOnDelete ? 'error' : undefined}>
-						{!errorOnDelete ? 'Essa ação não pode ser desfeita!' :
-							'Não é possível apagar esse grupo pois ele está em uso.'}
+					<DialogContentText>
+						Essa ação não pode ser desfeita!
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
@@ -138,7 +135,7 @@ function FormDialog({ open, onClose, title, data }) {
 		'Apresentação',
 		'Evento',
 		'Exercício de Cargo',
-		'Outra'
+		'Outro'
 	])
 
 	useEffect(() => {
@@ -174,6 +171,8 @@ function FormDialog({ open, onClose, title, data }) {
 		for (const [k, v] of Object.entries(innerData)) {
 			saveObject[k] = !isNaN(v) ? parseFloat(v) : v
 		}
+
+		saveObject.canBeDeleted = true
 
 		if(data) {
 			updateDoc(doc(firestore, Collections.MODALITIES, data.id), saveObject).then(onClose)
