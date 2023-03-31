@@ -176,6 +176,8 @@ function FormDialog({ open, onClose, title, data }) {
 		}
 		for (const [k, v] of Object.entries(saveObject)) {
 			saveObject[k] = !isNaN(v) ? parseFloat(v) : v
+			if(v === undefined)
+				delete saveObject[k]
 		}
 
 		if(data) {
