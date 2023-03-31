@@ -1,38 +1,38 @@
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
 import { Collections, extractData } from "../../helper/firebase"
 import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import CloseIcon from '@mui/icons-material/Close'
-import { PatternFunctions, useTextPatterns } from "../../helper/hooks"
-import { someEmpty } from "../../helper/short-functions"
+import { putEventTargetValue, someEmpty } from "../../helper/short-functions"
 import FeedbackBox from "../../components/FeedbackBox";
 
 function Modality() {
 	const [modalities, setModalities] = useState([])
-	const [clickedItemIndex, setClickedItemIndex] = useState(null)
+	const clickedItemIndex = useRef(null)
 	const [formIsOpen, setFormIsOpen] = useState(false)
 	const [deleteDialogIsOpen, setDeleteDialogIsOpen] = useState(false)
 	const [ showFeedback, setShowFeedback ] = useState(false)
 
+	
+	const closeFormDialog = useCallback(() => {
+		setFormIsOpen(false)
+		clickedItemIndex.current = null
+	}, [])
+	
+	const openFormDialog = useCallback(() => setFormIsOpen(true), [])
+	const closeDeleteDialog = useCallback(() => setDeleteDialogIsOpen(false), [])
+	
 	const deleteAction = useCallback(() => {
-		const { id: docId } = modalities[clickedItemIndex]
+		const { id: docId } = modalities[clickedItemIndex.current]
 
 		deleteDoc(doc(getFirestore(), Collections.MODALITIES, docId))
 			.then(() => {
 				closeDeleteDialog()
 				setShowFeedback(true)
 			})
-	}, [ modalities, clickedItemIndex ])
-
-	const closeFormDialog = useCallback(() => {
-		setFormIsOpen(false)
-		setClickedItemIndex(null)
-	}, [])
-	
-	const openFormDialog = useCallback(() => setFormIsOpen(true), [])
-	const closeDeleteDialog = useCallback(() => setDeleteDialogIsOpen(false), [])
+	}, [ modalities, closeDeleteDialog ])
 
 	useEffect(() => {
 		const modalities = collection(getFirestore(), Collections.MODALITIES)
@@ -49,13 +49,13 @@ function Modality() {
 				startIcon={<AddIcon/>}
 				variant='contained'
 				onClick={() => {
-					setClickedItemIndex(null)
+					clickedItemIndex.current = null
 					openFormDialog()
 				}}
 			>Novo Grupo</Button>
 			<Box mt='10px'>
 				{modalities.map((mod, index) => (
-					<Accordion key={mod.id} onClickCapture={() => setClickedItemIndex(index)}>
+					<Accordion key={mod.id} onClickCapture={() => clickedItemIndex.current = index}>
 						<AccordionSummary expandIcon={<ExpandMoreIcon />}>
 							<Typography>{mod.description}</Typography>
 						</AccordionSummary>
@@ -91,9 +91,9 @@ function Modality() {
 				/>
 			</Box>
 			<FormDialog
-				title={ (clickedItemIndex !== null ? 'Editar' : 'Novo') + ' Grupo' }
+				title={ (clickedItemIndex.current !== null ? 'Editar' : 'Novo') + ' Grupo' }
 				open={formIsOpen}
-				data={modalities[clickedItemIndex]}
+				data={modalities[clickedItemIndex.current]}
 				onClose={closeFormDialog}
 			/>
 
@@ -116,15 +116,23 @@ function Modality() {
 	)
 }
 
-const defaultInnerData = { type: 'default' }
-
 function FormDialog({ open, onClose, title, data }) {
-	const [ innerData, setInnerData ] = useState()
-	const description = useTextPatterns(PatternFunctions.limit(300))
-	const limit = useTextPatterns(PatternFunctions.onlyNumbers)
-	const amount = useTextPatterns(PatternFunctions.onlyNumbers)
 
+	const [ amount, setAmount ] = useState('')
+	const [ description, setDescription ] = useState('')
+	const [ limit, setLimit ] = useState('')
+	const [ type, setType ] = useState('default')
+	const [ otherType, setOtherType ] = useState('')
 
+	
+	const clearStete = useCallback(() => {
+		setAmount('')
+		setDescription('')
+		setLimit('')
+		setOtherType('')
+		setType('default')
+	}, [])
+	
 	const types = useRef([
 		'default',
 		'Hora',
@@ -137,54 +145,50 @@ function FormDialog({ open, onClose, title, data }) {
 		'Exercício de Cargo',
 		'Outro'
 	])
+	
+	const formIsInvalid = useMemo(() =>
+		description.length > 300 || isNaN(amount) || isNaN(limit)
+		|| type === types.current[0] || someEmpty(description, amount, limit),
+	[description, amount, limit, type])
 
 	useEffect(() => {
 		if(data) {
-			setInnerData(data)
+			setDescription(data.description)
+			setLimit(data.limit.toString())
+			setAmount(data.amount.toString())
+			setType(data.type)
+			setOtherType(data.otherType)
 		} else {
-			setInnerData(defaultInnerData)
+			clearStete()
 		}
-	}, [data])
-
-	const updateInnerData = useCallback(Conversor => {
-		return ({ target: { value, name }}) => {
-			setInnerData(oldData => ({ ...oldData, [name]: Conversor ? Conversor(value) : value }))
-		}
-	}, [])
-
-	useEffect(() => {
-		setInnerData(oldData => ({ ...oldData, limit: limit.value }))
-	}, [ limit.value ])
-
-	useEffect(() => {
-		setInnerData(oldData => ({ ...oldData, description: description.value }))
-	}, [ description.value ])
-
-	useEffect(() => {
-		setInnerData(oldData => ({ ...oldData, amount: amount.value }))
-	}, [ amount.value ])
+	}, [data, clearStete])
 
 	const save = useCallback(() => {
 		const firestore = getFirestore()
 		
-		const saveObject = {}
-		for (const [k, v] of Object.entries(innerData)) {
+		const saveObject = {
+			description,
+			amount,
+			limit,
+			type,
+			otherType,
+			canBeDeleted: true
+		}
+		for (const [k, v] of Object.entries(saveObject)) {
 			saveObject[k] = !isNaN(v) ? parseFloat(v) : v
 		}
-
-		saveObject.canBeDeleted = true
 
 		if(data) {
 			updateDoc(doc(firestore, Collections.MODALITIES, data.id), saveObject).then(onClose)
 		} else {
 			addDoc(collection(firestore, Collections.MODALITIES), saveObject).then(onClose)
 		}
-	}, [ data, innerData, onClose ])
+	}, [ data, description, amount, limit, type, otherType, onClose ])
 
 	const exit = useCallback(() => {
 		onClose()
-		setInnerData(defaultInnerData)
-	}, [ onClose ])
+		clearStete()
+	}, [ onClose, clearStete ])
 
 	return (
 		<Dialog fullScreen open={open} onClose={exit}>
@@ -198,7 +202,7 @@ function FormDialog({ open, onClose, title, data }) {
 					</Typography>
 					<Button
 						sx={{ color: 'inherit' }}
-						disabled={someEmpty(description.value, amount.value, limit.value) || innerData.type === types.current[0]}
+						disabled={formIsInvalid}
 						onClick={save}
 					>salvar</Button>
 				</Toolbar>
@@ -210,27 +214,28 @@ function FormDialog({ open, onClose, title, data }) {
 			>
 				<TextField
 					multiline
-					value={innerData?.description ?? ''}
-					onChange={description.onChange}
+					value={description}
+					onChange={putEventTargetValue(setDescription)}
+					error={description.length > 300}
 					label='Descrição'/>
 
 				<TextField
-					value={innerData?.amount ?? ''}
-					name='amount'
-					onChange={amount.onChange}
+					value={amount}
+					onChange={putEventTargetValue(setAmount)}
+					error={isNaN(amount)}
 					label='Quantidade (em horas)'/>
 
 				<TextField
-					value={innerData?.limit ?? ''}
-					onChange={limit.onChange}
+					value={limit}
+					onChange={putEventTargetValue(setLimit)}
+					error={isNaN(limit)}
 					label='Limite de aproveitamento (em horas)'/>
-
 
 				<FormControl>
 					<InputLabel>Unidade</InputLabel>
 					<Select
-						value={innerData?.type}
-						onChange={updateInnerData()}
+						value={type}
+						onChange={putEventTargetValue(setType)}
 						name="type"
 						label='Unidade'
 					>
@@ -244,12 +249,11 @@ function FormDialog({ open, onClose, title, data }) {
 						Informe como esse grupo será contabilizada.
 					</FormHelperText>
 				</FormControl>
-				{innerData?.type === types.current.at(-1) &&
+				{type === types.current.at(-1) &&
 					<TextField
-						value={innerData?.otherType ?? ''}
-						name='otherType'
+						value={otherType}
 						placeholder="especifique uma unidade"
-						onChange={updateInnerData()}
+						onChange={putEventTargetValue(setOtherType)}
 					/>
 				}
 				<Typography fontStyle='italic' color='neutral.main'>Todos os campos são obrigatórios</Typography>

@@ -78,7 +78,9 @@ function AdminHome() {
 		if (pendingTasks.isLoading || userTasks.isLoading)
 			return []
 
-		for (let i = 0; i < pendingTasks.data.length; i++) {
+		const length = pendingTasks.data.length || userTasks.data.length || 0
+
+		for (let i = 0; i < length; i++) {
 			const pending = pendingTasks.data[i]
 			const usr = userTasks.data[i]
 			if (pending && usr) {
@@ -121,8 +123,8 @@ function AdminHome() {
 		setRejectCurrentTask(false)
 		setOpenStatusChange(false)
 		setShowFeedback(false)
-		replyHours.clearValue()
-		comments.clearValue()
+		replyHours.setValue('')
+		comments.setValue('')
 	}, [comments, replyHours])
 
 	const sendReply = useCallback(status => {
@@ -202,7 +204,7 @@ function AdminHome() {
 			)
 		
 		return visibleTasks.map(toInfoRow)
-	}, [ tasks, visibleTasks ])
+	}, [ visibleTasks, pendingTasks.isLoading, userTasks.isLoading ])
 
 	return (
 		<>

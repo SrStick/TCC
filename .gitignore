@@ -3,8 +3,6 @@
 # dependencies
 /node_modules
 
-# testing
-/coverage
 
 # production
 /build
@@ -18,3 +16,11 @@ src/components/LimitedTextField.jsx
 .firebase
 .firebaserc
 firebase.json
+stats.html
+emulator-data
+ui-debug.log
+.gitignore
+firestore-debug.log
+.eslintrc.json
+firebase-debug.log
+firebase-config
