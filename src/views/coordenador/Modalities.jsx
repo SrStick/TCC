@@ -48,7 +48,9 @@ function Modality() {
 		const q = query(modalities, limit(20))
 
 		return onSnapshot(q, ({ docs }) => {
-			setModalities(docs.map(extractData))
+			setModalities(docs
+				.map(extractData)
+				.sort(({ description: descA }, { description: descB }) => descA.localeCompare(descB)))
 		})
 	}, [])
 
@@ -172,6 +174,11 @@ function FormDialog({ open, onClose, title, data }) {
 		}
 	}, [data, clearStete])
 
+	const exit = useCallback(() => {
+		onClose()
+		clearStete()
+	}, [ onClose, clearStete ])
+
 	const save = useCallback(() => {
 		const firestore = getFirestore()
 		
@@ -190,16 +197,11 @@ function FormDialog({ open, onClose, title, data }) {
 		}
 
 		if(data) {
-			updateDoc(doc(firestore, Collections.MODALITIES, data.id), saveObject).then(onClose)
+			updateDoc(doc(firestore, Collections.MODALITIES, data.id), saveObject).then(exit)
 		} else {
-			addDoc(collection(firestore, Collections.MODALITIES), saveObject).then(onClose)
+			addDoc(collection(firestore, Collections.MODALITIES), saveObject).then(exit)
 		}
-	}, [ data, description, amount, limit, type, otherType, onClose ])
-
-	const exit = useCallback(() => {
-		onClose()
-		clearStete()
-	}, [ onClose, clearStete ])
+	}, [ data, description, amount, limit, type, otherType, exit ])
 
 	return (
 		<Dialog fullScreen open={open} onClose={exit}>
