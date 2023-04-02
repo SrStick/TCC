@@ -1,7 +1,17 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, limit, onSnapshot, query, updateDoc } from "firebase/firestore"
 import { Collections, extractData } from "../../helper/firebase"
-import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, Button, Stack, Dialog, AppBar, Toolbar, IconButton, TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material"
+import {
+	Box, Accordion,
+	AccordionSummary, AccordionDetails,
+	Typography, Button,
+	Stack, Dialog,
+	AppBar, Toolbar,
+	IconButton, TextField,
+	Select, MenuItem,
+	FormControl, InputLabel,
+	FormHelperText, DialogTitle,
+	DialogContent, DialogContentText, DialogActions } from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import CloseIcon from '@mui/icons-material/Close'
@@ -15,7 +25,6 @@ function Modality() {
 	const [deleteDialogIsOpen, setDeleteDialogIsOpen] = useState(false)
 	const [ showFeedback, setShowFeedback ] = useState(false)
 
-	
 	const closeFormDialog = useCallback(() => {
 		setFormIsOpen(false)
 		clickedItemIndex.current = null
@@ -78,7 +87,7 @@ function Modality() {
 							</Box>
 							<Stack direction='row' mt={2}>
 								<Button color='secondary' variant="contained" onClick={openFormDialog}>editar</Button>
-								<Button color='error' disabled={!mod.canBeDeleted} onClickCapture={() => setDeleteDialogIsOpen(true)}>remover</Button>
+								<Button color='error' disabled={mod.canBeDeleted === false} onClickCapture={() => setDeleteDialogIsOpen(true)}>remover</Button>
 							</Stack>
 						</AccordionDetails>
 					</Accordion>
