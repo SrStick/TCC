@@ -92,6 +92,8 @@ function Content() {
 							case 'auth/wrong-password':
 								setPasswordError('senha incorreta')
 							break
+							case 'auth/weak-password':
+								setPasswordError('a senha deve conter, no mínimo, 6 caracteres')
 						}
 					}
 				}
@@ -151,7 +153,7 @@ function Content() {
 			{toUpdateInfo && (
 				<Stack rowGap={1} alignItems="center">
 					<TextField
-						label={`Nov${artigo} ${captalize(toUpdateInfo)}`}
+						label={`Nov${artigo} ${toUpdateInfo}`}
 						value={fieldValue}
 						onChange={putEventTargetValue(setFieldValue)}
 						onKeyUp={hideUpdateOnEcape}

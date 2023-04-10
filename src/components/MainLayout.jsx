@@ -18,8 +18,6 @@ function MainLayout() {
 
 	const [ drawerIsOpen, setDrawerIsOpen ] = useState(false)
 	const [ exitDialogIsOpen, setExitDialogIsOpen ] = useState(false)
-	const [ promoteDialogIsOpen, setPromoteDialogIsOpen ] = useState(false)
-	const [ toPromoteEmail, setToPromoteEmail ] = useState('')
 	const [ accountMenuAnchor, setAccountMenuAnchor ] = useState()
 
 	const action = useRef()
@@ -29,7 +27,6 @@ function MainLayout() {
 		let fn
 		switch (name) {
 			case 'exit': fn = setExitDialogIsOpen; break
-			case 'promote': fn = setPromoteDialogIsOpen; break
 			case 'drawer': fn = setDrawerIsOpen
 		}
 		return () => fn(visible)
@@ -42,8 +39,10 @@ function MainLayout() {
 
 	useEffect(() => {
 		if (!accountMenuAnchor && action.current) {
-			action.current()
-			action.current = null
+			setTimeout(() => {
+				action.current()
+				action.current = null
+			}, 10)
 		}
 	}, [ accountMenuAnchor ])
 
@@ -102,7 +101,6 @@ function MainLayout() {
 								open={!!accountMenuAnchor}
 								onClose={() => setAccountMenuAnchor(null)}
 								anchorOrigin={{ vertical: "bottom", horizontal:'right' }}
-								keepMounted
 							>
 								<MenuItem
 									onClick={() => {
@@ -148,25 +146,6 @@ function MainLayout() {
 					</Button>
 				</DialogActions>
 			</Dialog>
-
-			{/* <Dialog open={promoteDialogIsOpen} onClose={showDialog("promote", false)}>
-				<DialogTitle>Promoção</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						Digite o email do usuário que deseja que se torne um ?.
-					</DialogContentText>
-					<TextField
-						onBlur={putEventTargetValue(setToPromoteEmail)}
-						fullWidth
-					/>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={addEmailToPromoteList.bind(null, toPromoteEmail)}>
-						Confirmar
-					</Button>
-					<Button onClick={showDialog("promote", false)}>Voltar</Button>
-				</DialogActions>
-			</Dialog> */}
 		</Box>
 	)
 }

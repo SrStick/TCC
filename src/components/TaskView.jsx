@@ -17,7 +17,7 @@ function TaskView({ task, onFileClick }) {
 			}
 		>
 			<ListItemText
-				primary={task.description}
+				primary={task.getShortDescription()}
 				secondary={
 					<>
 						<Typography

@@ -10,7 +10,7 @@ function FeedbackBox({ visible, setVisible, action, successMessage }) {
 					action()
 				setVisible(false)
 			}, 4 * 1000)
-	}, [ visible ])
+	}, [ visible, action, setVisible ])
 	return (
 		<Box
 			bgcolor={"#4c4c4c"}

@@ -14,7 +14,7 @@ function InfoDialog({ open, onClose, task }) {
 	const { modality, files, reply, status, description } = task ?? {}
 
 	return (
-		<Dialog open={open} onClose={onClose} TransitionComponent={SlideTransition} keepMounted>
+		<Dialog open={open} onClose={onClose} TransitionComponent={SlideTransition}>
 			<DialogTitle>Informações</DialogTitle>
 			<DialogContent>
 				{ description && (

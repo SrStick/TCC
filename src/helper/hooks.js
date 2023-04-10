@@ -13,10 +13,9 @@ export function useTrackUploadProgress() {
 		const currentFile = files[0]
 		let fileExt, fileRef
 
-
 		const stateCallbacks = {
 			next(snap) {
-				const progress = (snap.bytesTransferred / snap.totalBytes) * 100
+				const progress = snap.bytesTransferred / snap.totalBytes * 100
 				setUploadProgress(Math.floor(progress))
 			},
 			complete() {
