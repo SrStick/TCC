@@ -7,7 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useTrackUploadProgress } from "../../helper/hooks";
 import { someEmpty, percentCalc, putEventTargetValue } from '../../helper/short-functions'
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, Timestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, Timestamp } from "firebase/firestore/lite";
 import { Collections, extractData, getUserID, Status, useUser } from "../../helper/firebase";
 import { useNavigate } from "react-router-dom";
 
@@ -99,7 +99,7 @@ function SendActivity() {
 	}
 
 	const onFinishUpload = useCallback(files => {
-		addDoc(collection(getFirestore(), Collections.TASKS), {
+		const newDoc = {
 			description,
 			modality: modalities.find(mod => mod.id === modalityId),
 			status: Status.EM_ANALISE,
@@ -109,7 +109,14 @@ function SendActivity() {
 				name: user.info.name
 			},
 			files
-		}).then(() => navigate('/'))
+		}
+
+		addDoc(collection(getFirestore(), Collections.TASKS), newDoc)
+		.then(({ id: newDocId }) => {
+			newDoc.id = newDocId
+			window.dispatchEvent(new CustomEvent('adddoc', { detail: newDoc }))
+			navigate('/')
+		})
 	}, [ description, modalityId, modalities, user, navigate ])
 
 	const beginUpload = useCallback(() => {

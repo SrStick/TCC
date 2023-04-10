@@ -1,5 +1,5 @@
 import { getAuth } from "firebase/auth"
-import { onSnapshot, getDoc, getDocs, query, collection, where, getFirestore, doc, limitToLast, endBefore, limit, startAfter, orderBy } from "firebase/firestore"
+import { getDoc, getDocs, query, collection, where, getFirestore, doc, limitToLast, endBefore, limit, startAfter, orderBy } from "firebase/firestore/lite"
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 
 export const Collections = {
@@ -74,32 +74,47 @@ export function useTaskQuery(options) {
 		const userConstraints = options?.constraints ?? []
 		
 		const q = buildQuery(Collections.TASKS, ...startConstraints.concat(userConstraints))
-		
-		return onSnapshot(q, snap => {
-			const { foreach } = options || {}
-			
-			const docsChanges = snap.docChanges()
-			const addedDocs = docsChanges
-				.filter(change => change.type === 'added')
-				.map(change => change.doc)
-				.map(TaskFactory)
 
-			if (foreach)
-				addedDocs.forEach(foreach)
+		getDocs(q).then(({ docs }) => {
+			const { foreach } = options || {}
+			if(foreach)
+				docs.map(foreach)
+
+			lastDocsRef.current = docs
 			
-			lastDocsRef.current = snap.docs
-			setTaskStack(oldValue => {
-				docsChanges
-					.filter(change => change.type === 'modified')
-					.map(change => change.doc)
-					.forEach(newDoc => {
-						const index = oldValue.findIndex(task => task.id === newDoc.id)
-						oldValue[index] = TaskFactory(newDoc)
-					})
-					return oldValue.concat(addedDocs)
-				})
+			setTaskStack(docs.map(TaskFactory))
 			setIsLoading(false)
 		})
+
+		const onAddDoc = ({ detail: addedDoc }) => {
+			setTaskStack(oldValue => ([ TaskFactory(addedDoc), ...oldValue ]))
+		}
+		const onEditDoc = ({ detail: { id, status, reply: { author, date } } }) => {
+			setTaskStack(oldValue => {
+				const copy = [...oldValue]
+				const oldDocIndex = copy.findIndex(doc => doc.id === id)
+				const oldDoc = copy[oldDocIndex]
+				copy[oldDocIndex] = {
+					...oldDoc,
+					status,
+					reply: {
+						author,
+						date: formatDate(date)
+					}
+				}
+				return copy
+			})
+		}
+
+		window.addEventListener('adddoc', onAddDoc)
+		window.addEventListener('editdoc', onEditDoc)
+
+		console.log('mount');
+		return () => {
+			console.log('unmount');
+			window.removeEventListener('adddoc', onAddDoc)
+			window.removeEventListener('editdoc', onEditDoc)
+		}
 	}, [ lastDoc, filterByStatus ])
 
 	const next = useCallback(() => setLastDoc(lastDocsRef.current.at(-1)), [])
@@ -136,6 +151,12 @@ function TaskFactory(doc) {
 
 	task.modality.getTypeDesc = function() {
 		return this.otherType || this.type
+	}
+
+	task.getShortDescription = function() {
+		const descLength = this.description.length
+		const shortDescription = this.description.substring(0, 297) + '...'
+		return descLength > 300 ? shortDescription : this.description
 	}
 
 	return task

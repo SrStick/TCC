@@ -8,7 +8,10 @@ import {
 	Skeleton, InputAdornment,
 	MenuItem, InputLabel,
 	Select, FormControl, Stack,
-	
+	Table, TableBody,
+	TableCell, TableContainer,
+	TableHead, TableRow,
+	Paper, Toolbar
 } from "@mui/material"
 import { useState, useRef, useCallback, forwardRef, useEffect, useMemo } from "react";
 
@@ -17,20 +20,9 @@ import FactCheckIcon from '@mui/icons-material/FactCheckOutlined';
 import CloseIcon from "@mui/icons-material/Close";
 import CheckIcon from "@mui/icons-material/Check";
 
-
-/* TABELA */
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Toolbar from '@mui/material/Toolbar';
-
 /* FIREBASE */
 import { Collections, useTaskQuery, getUserID, Status, useUser } from '../../helper/firebase';
-import { doc, getFirestore, increment, Timestamp, updateDoc, deleteField, where, runTransaction } from 'firebase/firestore';
+import { doc, getFirestore, increment, Timestamp, updateDoc, deleteField, where, runTransaction } from 'firebase/firestore/lite';
 import { PatternFunctions, useTextPatterns } from '../../helper/hooks';
 import { someEmpty, putEventTargetValue } from '../../helper/short-functions';
 import ChangePasswordPanel from '../../components/ChangePasswordPanel';
@@ -57,7 +49,7 @@ const ShadowRows = () => {
 }
 
 function AdminHome() {
-	const [ clickedIndex, setClickedIndex ] = useState(null)
+	const clickedIndex = useRef(null)
 	const [ infoIsOpen, setInfoIsOpen ] = useState(false)
 	const [ openStatusChange, setOpenStatusChange ] = useState(false)
 	const [ rejectCurrentTask, setRejectCurrentTask ] = useState(false)
@@ -130,7 +122,7 @@ function AdminHome() {
 	const sendReply = useCallback(status => {
 		setSent(true)
 		const firestore = getFirestore()
-		const currentTask = visibleTasks[clickedIndex]
+		const currentTask = visibleTasks[clickedIndex.current]
 		const modalityId = currentTask.modality.id
 
 		const reply = {
@@ -152,29 +144,32 @@ function AdminHome() {
 		if(status === Status.COMPUTADO) {
 			reply.hours = parseFloat(replyHours.value)
 		}
+		const editedPart = { status, reply }
+		window.dispatchEvent(new CustomEvent('editdoc', { detail: { id: currentTask.id, ...editedPart} }))
 
-		return runTransaction(firestore, async transition => {
-			transition.update(doc(firestore, Collections.TASKS, currentTask.id), { status, reply })
+		runTransaction(firestore, async transition => {
+
+			transition.update(doc(firestore, Collections.TASKS, currentTask.id), editedPart)
 			transition.update(doc(firestore, Collections.MODALITIES, modalityId), { canBeDeleted: false })
 
 			if(status === Status.COMPUTADO) {
 				transition.set(currentModalityUserTime, { total: increment(reply.hours) })
 			}
 		}).then(() => {
-		setShowFeedback(true)
-		setTimeout(closeStatusChangeDialog, 2 * 1000)
-	})
-	}, [user.info.name, replyHours.value, visibleTasks, clickedIndex, comments.value, closeStatusChangeDialog ])
+			setShowFeedback(true)
+			setTimeout(closeStatusChangeDialog, 2 * 1000)
+		})
+	}, [user.info.name, replyHours.value, visibleTasks, comments.value, closeStatusChangeDialog ])
 
 	const rendererRows = useCallback(() => {
 
 		const toInfoRow = (task, index) => (
 			<TableRow key={task.id}>
-				<TableCell>{task.description}</TableCell>
+				<TableCell>{task.getShortDescription()}</TableCell>
 				<TableCell>{task.date}</TableCell>
 				<TableCell>{task.author.name}</TableCell>
 				<TableCell
-					onClickCapture={() => setClickedIndex(index)}
+					onClickCapture={() => clickedIndex.current = index}
 					sx={{ display: 'flex', flexWrap: 'nowrap', justifyContent: 'center' }}
 				>
 					<Tooltip title="Mais informações">
@@ -262,13 +257,13 @@ function AdminHome() {
 				<DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 					<Stack border={1} borderColor='#c4c4c4' rowGap={1} padding={1}>
 						<span>
-							Ganho por envio: {visibleTasks[clickedIndex]?.modality.amount}h
+							Ganho por envio: {visibleTasks[clickedIndex.current]?.modality.amount}h
 						</span>
 						<span>
-							Limite: {visibleTasks[clickedIndex]?.modality.limit}h
+							Limite: {visibleTasks[clickedIndex.current]?.modality.limit}h
 						</span>
 						<span>
-							Unidade: {visibleTasks[clickedIndex]?.modality.getTypeDesc()}
+							Unidade: {visibleTasks[clickedIndex.current]?.modality.getTypeDesc()}
 						</span>
 					</Stack>
 					{ !rejectCurrentTask ?
@@ -335,7 +330,7 @@ function AdminHome() {
 			<InfoDialog
 				open={infoIsOpen}
 				onClose={() => setInfoIsOpen(false)}
-				task={visibleTasks.length !== 0 ? visibleTasks[clickedIndex] : null}
+				task={visibleTasks.length !== 0 ? visibleTasks[clickedIndex.current] : null}
 			/>
 		</>
 	)

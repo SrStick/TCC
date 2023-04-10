@@ -9,7 +9,7 @@ import { useState } from "react";
 import { TaskView, InfoDialog } from "../../components";
 
 import { useTaskQuery, getUserID } from '../../helper/firebase';
-import { where } from "firebase/firestore";
+import { where } from "firebase/firestore/lite";
 
 
 function CommumUserHome() {
