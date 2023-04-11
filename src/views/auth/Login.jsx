@@ -52,7 +52,7 @@ export default function Login() {
 			if (err.code === 'auth/wrong-password')
 				setPasswordErrorMessage('senha incorreta')
 
-			if (process.env.NODE_ENV === 'development')
+			if (import.meta.env.DEV)
 				console.log(err.toString())
 		}
 
