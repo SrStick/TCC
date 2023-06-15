@@ -78,7 +78,7 @@ export function useTaskQuery(options) {
 		getDocs(q).then(({ docs }) => {
 			const { foreach } = options || {}
 			if(foreach)
-				docs.map(foreach)
+				docs.forEach(foreach)
 
 			lastDocsRef.current = docs
 			
@@ -109,23 +109,25 @@ export function useTaskQuery(options) {
 		window.addEventListener('adddoc', onAddDoc)
 		window.addEventListener('editdoc', onEditDoc)
 
-		console.log('mount');
 		return () => {
-			console.log('unmount');
 			window.removeEventListener('adddoc', onAddDoc)
 			window.removeEventListener('editdoc', onEditDoc)
 		}
 	}, [ lastDoc, filterByStatus ])
 
-	const next = useCallback(() => setLastDoc(lastDocsRef.current.at(-1)), [])
+	const grownUp = () => !isLoading && lastDocsRef.current?.length !== 0
+
+	const next = useCallback(() => {
+		if (grownUp())
+			setLastDoc(lastDocsRef.current.at(-1))
+
+	}, [])
 
 	return {
 		data: taskStack,
 		next,
 		isLoading,
-		grownUp() {
-			return !isLoading && lastDocsRef.current?.length !== 0
-		},
+		grownUp,
 		showOnly: setFilterByStatus
 	}
 }
@@ -136,10 +138,6 @@ function formatDate(timestemp, showTime) {
 		.map(datePart => datePart < 10 ? '0' + datePart : datePart)
 		.join('/')
 	return !showTime ? dateString : `${dateString} ${date.getHours()}:${date.getMinutes()}`
-
-	// const [ dateString, time ] = date.toLocaleString().split(', ')
-	// const [ hours, minutes ] = time.split(':')
-	// return !showTime ? dateString : `${dateString} ${hours}:${minutes}` 
 }
 
 function TaskFactory(doc) {

@@ -20,3 +20,8 @@ export function someEmpty(...values) {
 export function captalize(string) {
 	return string.split(/ +/).map(word => word[0].toUpperCase() + word.substring(1))
 }
+
+export function devLog(...args) {
+	if (import.meta.env.DEV)
+		console.log(...args)
+}

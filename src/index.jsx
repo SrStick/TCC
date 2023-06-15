@@ -16,7 +16,7 @@ const { DEV: DEV_MODE } = import.meta.env
 
 initializeApp(firebaseConfig)
 if (DEV_MODE) {
-  connectFirestoreEmulator(getFirestore(), 'localhost', 8080)
+  connectFirestoreEmulator(getFirestore(), 'localhost', 8081)
   connectStorageEmulator(getStorage(), 'localhost', 9199)
 }
 
