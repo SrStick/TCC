@@ -4,8 +4,8 @@ import {
 } from "firebase/auth";
 
 import {
-	Button, Checkbox,
-	Divider, FormControlLabel, Link, Stack, TextField
+	Button, Checkbox, Box,
+	Divider, FormControlLabel, Link, Stack, TextField, Typography
 } from "@mui/material";
 
 
@@ -14,7 +14,7 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 import { PasswordField } from "../../components";
 import { UserContext } from "../../helper/firebase";
-import { someEmpty, putEventTargetValue, putToggle } from '../../helper/short-functions';
+import { someEmpty, putEventTargetValue, putToggle, devLog } from '../../helper/short-functions';
 import AuthLayout from "./AuthLayout";
 
 export default function Login() {
@@ -52,53 +52,59 @@ export default function Login() {
 			if (err.code === 'auth/wrong-password')
 				setPasswordErrorMessage('senha incorreta')
 
-			if (import.meta.env.DEV)
-				console.log(err.toString())
+			devLog(err.toString())
 		}
 
 	}, [ email, password, persistAuth, user, navigate ])
 
 	return (
-		<AuthLayout>
-			<TextField
-				label="Email"
-				onChange={putEventTargetValue(setEmail)}
-				onBlur={getPlaceholder}
-				type='email'
-				error={!!emailErrorMessage}
-				helperText={emailErrorMessage}
+		<>
+			<AuthLayout>
+				<TextField
+					label="Email"
+					onChange={putEventTargetValue(setEmail)}
+					onBlur={getPlaceholder}
+					type='email'
+					error={!!emailErrorMessage}
+					helperText={emailErrorMessage}
+					/>
+				<PasswordField
+					onChange={putEventTargetValue(setPassword)}
+					label='Senha'
+					error={!!passwordErrorMessage}
+					helperText={passwordErrorMessage}
 				/>
-			<PasswordField
-				onChange={putEventTargetValue(setPassword)}
-				label='Senha'
-				error={!!passwordErrorMessage}
-				helperText={passwordErrorMessage}
-			/>
-			<Button
-				onClick={singIn}
-				variant="contained"
-				disabled={disableSingIn}
-				
-			>Entrar</Button>
-			<Stack sx={{ typography: 'body1' }} alignItems='center'>
-				<span>
-					Não tem uma conta?
-					<Link
-						component={RouterLink}
-						to='/singin'
-						state={{ placeholder: singInPlaceholder }}
-						ml='5px'>Registre-se</Link>
-				</span>
-				<span>
-					Esqueceu a senha? {/* ver depois */}
-				</span>
-				<Divider sx={{ mt: '10px' }} flexItem />
-				<FormControlLabel
-					sx={{ m: '0', userSelect: 'none' }}
-					label='Permanecer Logado.'
-					control={<Checkbox onChange={putToggle(setPesistAuth)} checked={persistAuth}/>}
-				/>
-			</Stack>
-		</AuthLayout>
+				<Button
+					onClick={singIn}
+					variant="contained"
+					disabled={disableSingIn}
+				>Entrar</Button>
+				<Stack sx={{ typography: 'body1' }} alignItems='center'>
+					<span>
+						Não tem uma conta?
+						<Link
+							component={RouterLink}
+							to='/singin'
+							state={{ placeholder: singInPlaceholder }}
+							ml='5px'>Registre-se</Link>
+					</span>
+					<span>
+						Esqueceu a senha? {/* ver depois */}
+					</span>
+					<Divider sx={{ mt: '10px' }} flexItem />
+					<FormControlLabel
+						sx={{ m: '0', userSelect: 'none' }}
+						label='Permanecer Logado.'
+						control={<Checkbox onChange={putToggle(setPesistAuth)} checked={persistAuth}/>}
+					/>
+				</Stack>
+			</AuthLayout>
+			<Box sx={{ pl: 2, mt: 5 }}>
+				<Typography component='h1' fontWeight='400' variant="h2">Sobre</Typography>
+				<Typography color='gray' fontStyle='italic'>
+					escreva coisas sobre o sistema
+				</Typography>
+			</Box>
+		</>
 	)
 }

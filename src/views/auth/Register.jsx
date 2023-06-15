@@ -226,7 +226,7 @@ export default function Register() {
 					Já tem uma conta? <Link to="/" component={RouterLink}>Entre aqui</Link>
 				</Typography>
 			}
-			<Button onClick={singUp} variant="contained">Cadastrar-se</Button>
+			<Button onClick={singUp} variant="contained">Cadastrar</Button>
 		</AuthLayout>
 	)
 }

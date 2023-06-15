@@ -56,6 +56,7 @@ function AdminHome() {
 	const [ filter, setFilter ] = useState('all')
 	const [ showFeedback, setShowFeedback ] = useState(false)
 	const [ sent, setSent ] = useState(false)
+	const [ taskStack, setTaskStack ] = useState([])
 
 	const pendingTasks = useTaskQuery({
 		constraints: [ where('status', '==', Status.EM_ANALISE) ]
@@ -63,45 +64,30 @@ function AdminHome() {
 	const userTasks = useTaskQuery({
 		constraints: [ where('reply.author.uid', '==', getUserID()) ]
 	})
-
 	const tasks = useMemo(() => {
-		const tasks = []
-		
 		if (pendingTasks.isLoading || userTasks.isLoading)
 			return []
 
-		const length = pendingTasks.data.length || userTasks.data.length || 0
-
-		for (let i = 0; i < length; i++) {
-			const pending = pendingTasks.data[i]
-			const usr = userTasks.data[i]
-			if (pending && usr) {
-				if (pending.id === usr.id)
-					tasks.push(usr)
-				else
-					tasks.push(pending, usr)
-			} else if (!pending && usr)
-				tasks.push(usr)
-			else
-				tasks.push(pending)
-			}
-
-			return tasks
-	}, [ pendingTasks, userTasks ])
+		return pendingTasks.data.concat(userTasks.data)
+	}, [ pendingTasks.isLoading, pendingTasks.data, userTasks.isLoading, userTasks.data ])
 
 	const user = useUser()
 
 	const visibleTasks = useMemo(() => {
 		if(filter === 'all')
-			return tasks
+			return taskStack
 
-		return tasks.filter(task => task.status === Status.EM_ANALISE)
-	}, [ tasks, filter ])
+		return taskStack.filter(task => task.status === Status.EM_ANALISE)
+	}, [ taskStack, filter ])
 
 
 	const comments = useTextPatterns(PatternFunctions.limit(200))
 
 	const isFirstAccessOfModerator = useRef(user.info.firstAccess)
+
+	useEffect(() => {
+		setTaskStack(oldTasks => oldTasks.concat(tasks))
+	}, [ tasks ])
 	
 	useEffect(() => {
 		if(isFirstAccessOfModerator.current) {
@@ -145,7 +131,7 @@ function AdminHome() {
 			reply.hours = parseFloat(replyHours.value)
 		}
 		const editedPart = { status, reply }
-		window.dispatchEvent(new CustomEvent('editdoc', { detail: { id: currentTask.id, ...editedPart} }))
+		window.dispatchEvent(new CustomEvent('editdoc', { detail: { id: currentTask.id, ...editedPart } }))
 
 		runTransaction(firestore, async transition => {
 
@@ -241,10 +227,8 @@ function AdminHome() {
 			<Button
 				disabled={!pendingTasks.grownUp() && !userTasks.grownUp()}
 				onClick={() => {
-					if (pendingTasks.grownUp())
-						pendingTasks.next()
-					if	(userTasks.grownUp())
-						userTasks.next()
+					pendingTasks.next()
+					userTasks.next()
 				}}
 			>Carregar mais dados</Button>
 

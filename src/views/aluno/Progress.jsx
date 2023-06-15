@@ -43,7 +43,7 @@ function ProgressView() {
 		<Stack rowGap={5}>
 			<Stack direction='row' justifyContent='flex-end' columnGap={2}>
 				<Stack alignItems='center'>
-					<Typography component='h3' fontSize='1.5rem' textTransform='capitalize'>horas nescessárias</Typography>
+					<Typography component='h3' fontSize='1.5rem' textTransform='capitalize'>horas necessárias</Typography>
 					<Typography fontSize='2rem' component='span' textTransform='capitalize'>360</Typography>
 				</Stack>
 				<Stack alignItems='center'>
