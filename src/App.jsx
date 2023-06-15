@@ -85,7 +85,7 @@ function App() {
 
 	useEffect(() => userRef.current.subscribe(), [])
 	
-// console.log(userRef.current);
+
 
 	if (loading)
 		return (
@@ -97,11 +97,13 @@ function App() {
 		return (
 			<ThemeProvider theme={theme}>
 				<UserProvider value={userRef.current}>
+				<Suspense fallback={<Loading/>}>
 					<Routes>
 						<Route path='/' element={<Login/>} />
 						<Route path='/singin' element={<Register/>} />
 						<Route path='*' element={<Error404/>}/>
 					</Routes>
+				</Suspense>
 				</UserProvider>
 			</ThemeProvider>
 		)
