@@ -74,15 +74,16 @@ export function useTaskQuery(options) {
 		const userConstraints = options?.constraints ?? []
 		
 		const q = buildQuery(Collections.TASKS, ...startConstraints.concat(userConstraints))
-
+		
 		getDocs(q).then(({ docs }) => {
 			const { foreach } = options || {}
+			const tasks = docs.map(TaskFactory)
 			if(foreach)
-				docs.forEach(foreach)
+				tasks.forEach(foreach)
 
 			lastDocsRef.current = docs
 			
-			setTaskStack(docs.map(TaskFactory))
+			setTaskStack(tasks)
 			setIsLoading(false)
 		})
 
@@ -115,14 +116,16 @@ export function useTaskQuery(options) {
 		}
 	}, [ lastDoc, filterByStatus ])
 
-	const grownUp = () => !isLoading && lastDocsRef.current?.length !== 0
-
+	const grownUp = useCallback(() => {
+		return !isLoading && lastDocsRef.current?.length !== 0
+	}, [ isLoading ])
+	
 	const next = useCallback(() => {
 		if (grownUp())
 			setLastDoc(lastDocsRef.current.at(-1))
-
-	}, [])
-
+	}, [ grownUp ])
+	
+	console.log(isLoading);
 	return {
 		data: taskStack,
 		next,

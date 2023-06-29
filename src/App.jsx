@@ -19,7 +19,7 @@ const CoordenadorHome = lazy(() => import('./views/coordenador/Home'))
 const SendActivity = lazy(() => import('./views/aluno/SendActivity'))
 const Progress = lazy(() => import('./views/aluno/Progress'))
 const Modality = lazy(() => import('./views/coordenador/Modalities'))
-const Profile = lazy(() => import('./views/Profile'))
+import Profile from './views/Profile';
 
 const UserProvider = UserContext.Provider
 
