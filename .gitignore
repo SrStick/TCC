@@ -24,3 +24,4 @@ firestore-debug.log
 .eslintrc.json
 firebase-debug.log
 firebase-config
+.vscode/launch.json
